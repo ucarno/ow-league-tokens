@@ -1,0 +1,1 @@
+start cmd /k "..\venv\Scripts\activate&cd ..&pyinstaller --noconfirm --name OverwatchTokenFarmer main.py"

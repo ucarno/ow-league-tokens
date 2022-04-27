@@ -1,0 +1,1 @@
+start cmd /k "..\venv\Scripts\activate&cd ..&title Venv"

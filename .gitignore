@@ -1,0 +1,8 @@
+.idea/
+config.json
+OverwatchTokenFarmer.spec
+
+__pycache__/
+build/
+dist/
+venv/
