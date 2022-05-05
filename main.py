@@ -8,7 +8,7 @@ from colorama import Fore, init
 
 
 LEAGUE_URL = 'https://overwatchleague.com/en-us/'
-TRACK_URL = 'https://wzavfvwgfk.execute-api.us-east-2.amazonaws.com/production/v2/sentinel-tracking/owl'
+TRACK_URL = 'https://pk0yccosw3.execute-api.us-east-2.amazonaws.com/production/v2/sentinel-tracking/owl'
 USERS_API_URL = 'https://playoverwatch.com/en-us/search/account-by-name/%s/'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
              '(KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36'
@@ -43,7 +43,7 @@ class Farmer:
     def tracker_loop(self):
         while True:
             if not self._continue:
-                sleep(3*60)
+                sleep(60)
                 self._continue = True
             if self.is_live:
                 Thread(target=self.track_watching).start()
@@ -111,6 +111,9 @@ class Farmer:
             'locale': 'en-us',
             'type': 'video_player',
             'videoId': self.video_id,
+            'timestamp': datetime.now().timestamp(),
+            'contentType': 'live',
+            'id_type': 'battleNetId'
         }
 
     def track_watching(self):
