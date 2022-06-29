@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import urllib.request
+import urllib.parse
 from time import sleep
 from sys import exit
 
@@ -156,7 +157,7 @@ def menu(args):
                     interrupt(leave_text)
                     break
 
-                url = USERS_API_URL % (username.replace('#', '%23'),)
+                url = USERS_API_URL % (urllib.parse.quote(username),)
 
                 with urllib.request.urlopen(url) as response:
                     response_text = response.read()
