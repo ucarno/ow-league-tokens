@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import logging
+import os
 import urllib.request
 import urllib.parse
 from time import sleep
@@ -306,6 +307,8 @@ def no_menu(args):
 
     if args.ids:
         account_ids = args.ids
+    elif 'ids' in os.environ: 
+        account_ids = os.environ.get('ids').split()
     else:
         account_ids = [int(i) for i in c.config['accounts'].keys()]
 
