@@ -35,6 +35,7 @@ Arguments can be used only when starting program using `nomenu` command:
 * `python main.py nomenu --ids 1234 4567 8910` - `owl` and `owc` values from config, IDs from command line
 
 ### Manually getting the Account-ID
+* The official Overwatch-League-Website is saving the account_id in a cookie with the same name. To access the cookie's data, use the following steps:
 1. Go to [https://overwatchleague.com/en-us](https://overwatchleague.com/en-us) and login with your Battle.Net-Account
 2. Open your browser's development tools (usually CTRL + Shift + i)
 3. Depending on your browser, use one of the following options:
