@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+
+  ow-league-tokens:
+    build: .
+    entrypoint: [ "python", "./main.py", "nomenu", "--owl", "--owc", "--ids", "id1", "and so on" ]
+    restart: unless-stopped
