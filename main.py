@@ -5,6 +5,7 @@ import logging
 import os
 import urllib.request
 import urllib.parse
+from json import JSONDecodeError
 from time import sleep
 from sys import exit
 
@@ -93,20 +94,26 @@ def menu(args):
             f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account',
 
             # option 2
+            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account manually (using account ID)',
+
+            # option 3
             f'{COLOR_FAILURE}(-){COLOR_RESET} Remove an account' + (
                 f' {COLOR_FAILURE}(no accounts added!){COLOR_RESET}' if not c.config['accounts'] else ''
             ),
 
-            # option 3
+            # option 4
+            f'List your accounts',
+
+            # option 5
             f'{stop_text if c.config["earn_owl"] else start_text} earning OWL Tokens '
             f'{earning if c.config["earn_owl"] else not_earning}',
 
-            # option 4
+            # option 6
             f'{stop_text if c.config["earn_owc"] else start_text} earning Contenders Skins '
             f'{earning if c.config["earn_owc"] else not_earning} '
             f'{COLOR_EXPERIMENTAL}(experimental!){COLOR_RESET}',
 
-            # option 5
+            # option 7
             'Exit',
         ]
         menu_str = '\n'.join([f'  {COLOR_OPTIONS}{i+1}.{COLOR_RESET} {e}' for i, e in enumerate(menu_entries)])
@@ -162,7 +169,13 @@ def menu(args):
 
                 with urllib.request.urlopen(url) as response:
                     response_text = response.read()
-                    users: list = json.loads(response_text)
+                    try:
+                        users: list = json.loads(response_text)
+                    except JSONDecodeError:
+                        interrupt(f'{COLOR_FAILURE}It seems that profiles API that is used to retrieve your account ID '
+                                  f'is currently under maintenance. Consider adding your account manually.{COLOR_RESET}')
+                        user_dict = None
+                        break
 
                 if not users:
                     print(f'{COLOR_FAILURE}Users with that username not found.{COLOR_RESET}', end='\n\n')
@@ -214,7 +227,7 @@ def menu(args):
                     c.save()
                     print(f'{COLOR_SUCCESS}Account added!{COLOR_RESET}')
 
-                    print(f'Want to add more? {COLOR_NEUTRAL}(y/N){COLOR_RESET}')
+                    print(f'\nWant to add more? {COLOR_NEUTRAL}(y/N){COLOR_RESET}')
                     add_more = input(' >>> ').lower() == 'y'
 
                     print()
@@ -223,8 +236,53 @@ def menu(args):
                         continue
                     break
 
-        # removing an account
+        # adding an account manually (using ID)
         elif option == 2:
+            print(f'\n{COLOR_NEUTRAL}Adding an account using account ID{COLOR_RESET}')
+            print('Where to get your account ID: '
+                  'https://github.com/ucarno/ow-league-tokens#manually-getting-your-account-id')
+
+            leave_text = f'{COLOR_SUCCESS}Alright!{COLOR_RESET}'
+
+            print(f'{COLOR_OPTIONS}Enter your account ID (leave blank to exit):{COLOR_RESET}')
+
+            while True:
+                try:
+                    number = input(' >>> ')
+                except KeyboardInterrupt:
+                    interrupt(leave_text)
+                    break
+
+                if number.strip() == '':
+                    interrupt(leave_text)
+                    break
+
+                number = number.strip()
+                if not number.isdigit() or int(number) < 1:
+                    print(f'{COLOR_FAILURE}Account ID must be a number.{COLOR_RESET}')
+                    continue
+
+                else:
+                    c.config['accounts'][number] = {
+                        'username': f'ID:{number}',
+                        'level': '???',
+                        'platform': '???',
+                    }
+                    c.save()
+                    print(f'{COLOR_SUCCESS}Account added!{COLOR_RESET}')
+
+                    print(f'\nWant to add more? {COLOR_NEUTRAL}(y/N){COLOR_RESET}')
+                    add_more = input(' >>> ').lower() == 'y'
+
+                    print()
+
+                    if add_more:
+                        print(f'{COLOR_OPTIONS}Enter your account ID (leave blank to exit):{COLOR_RESET}')
+                        continue
+                    break
+
+        # removing an account
+        elif option == 3:
             print(f'\n{COLOR_NEUTRAL}Account removal{COLOR_RESET}')
 
             accounts = c.config['accounts']
@@ -279,8 +337,22 @@ def menu(args):
                     interrupt(f'{COLOR_SUCCESS}Account removed!{COLOR_RESET}')
                     break
 
+        elif option == 4:
+            print(f'\n{COLOR_NEUTRAL}List of your accounts{COLOR_RESET}')
+
+            accounts = c.config['accounts']
+            if len(accounts) == 0:
+                interrupt(f'{COLOR_FAILURE}There are no accounts.{COLOR_RESET}')
+
+            accounts = [(key, value) for key, value in accounts.items()]
+            accounts_str = '\n'.join([(
+                f'  {COLOR_OPTIONS}{i + 1}.{COLOR_RESET} {a[1]["username"]} '
+                f'({a[1]["platform"].upper()} - LVL {a[1]["level"]}+)'
+            ) for i, a in enumerate(accounts)])
+            interrupt(accounts_str)
+
         # switching owl tokens
-        elif option == 3:
+        elif option == 5:
             print(f'\n{COLOR_NEUTRAL}League Tokens{COLOR_RESET}')
             text = f'You will {COLOR_FAILURE}no longer earn{COLOR_RESET} League Tokens.' if c.config['earn_owl'] else \
                    f'You will {COLOR_SUCCESS}now earn{COLOR_RESET} League Tokens!'
@@ -289,7 +361,7 @@ def menu(args):
             interrupt(text)
 
         # switching owc skins
-        elif option == 4:
+        elif option == 6:
             print(f'\n{COLOR_NEUTRAL}Contenders Skins{COLOR_RESET}')
             text = f'You will {COLOR_FAILURE}no longer earn{COLOR_RESET} Contenders Skins.' if c.config['earn_owc'] else \
                    f'You will {COLOR_SUCCESS}now earn{COLOR_RESET} Contenders Skins!'
@@ -297,7 +369,7 @@ def menu(args):
             c.save()
             interrupt(text)
 
-        elif option == 5:
+        elif option == 7:
             print('Bye!')
             exit()
 
