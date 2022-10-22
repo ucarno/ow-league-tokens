@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 import urllib.request
 import urllib.parse
 from json import JSONDecodeError
@@ -20,11 +21,11 @@ from farmer import Farmer
 
 
 def start_bot(earn_owl: bool, earn_owc: bool, account_ids: list[int]):
+    os.system('cls')
     print(f'\n  !!! Starting bot for {COLOR_NEUTRAL}{len(account_ids)}{COLOR_RESET} account(s) !!!')
     print('    League Tokens earning is ' +
          (f'{COLOR_SUCCESS}Enabled' if earn_owl else f'{COLOR_FAILURE}Disabled') + COLOR_RESET)
-    print('    Contenders Skins earning is ' +
-         (f'{COLOR_SUCCESS}Enabled' if earn_owc else f'{COLOR_FAILURE}Disabled') + COLOR_RESET)
+    print(f'\n      Press {COLOR_OPTIONS}CTRL+C{COLOR_RESET} to {COLOR_FAILURE}stop{COLOR_RESET} the bot')
 
     sleep(1)
     print()
@@ -43,21 +44,10 @@ def start_bot(earn_owl: bool, earn_owc: bool, account_ids: list[int]):
         )
         loop.create_task(farmer_owl.run())
 
-    if earn_owc:
-        farmer_owc = Farmer(
-            prefix='OWC',
-            check_url=OWC_CHECK_URL,
-            track_url=OWC_TRACK_URL,
-            account_ids=account_ids,
-            check_sentinel=False,
-            check_if_live=True,  # stream is always "available", so checking if live
-        )
-        loop.create_task(farmer_owc.run())
-
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        print('Bye!')
+        print(f'{COLOR_OPTIONS}Thanks for using the bot :D !{COLOR_RESET}')
         exit()
 
 
@@ -67,8 +57,8 @@ def menu(args):
     start_text = f'{COLOR_SUCCESS}Start{COLOR_RESET}'
     stop_text = f'{COLOR_FAILURE}Stop{COLOR_RESET}'
 
-    earning = f'{COLOR_NEUTRAL}[earning]{COLOR_RESET}'
-    not_earning = f'{COLOR_NEUTRAL}[not earning]{COLOR_RESET}'
+    earning = f'{COLOR_NEUTRAL}[Earning Activated]{COLOR_RESET}'
+    not_earning = f'{COLOR_NEUTRAL}[Earning Desactivated]{COLOR_RESET}'
 
     def interrupt(t: str):
         print(t, end='\n')
@@ -80,25 +70,25 @@ def menu(args):
 
         bot_text = 'Start bot!'
         if not c.config['accounts']:
-            bot_text += f' {COLOR_FAILURE}(no accounts added!){COLOR_RESET}'
+            bot_text += f' {COLOR_FAILURE}(0 Accounts !){COLOR_RESET}'
         else:
             bot_text += f' {COLOR_NEUTRAL}[{len(c.config["accounts"])} account(s)]{COLOR_RESET}'
         if not any([c.config['earn_owl'], c.config['earn_owc']]):
-            bot_text += f' {COLOR_FAILURE}(nothing to earn!){COLOR_RESET}'
+            bot_text += f' {COLOR_FAILURE}(Nothing to earn !){COLOR_RESET}'
 
         menu_entries = [
             # option 0
             bot_text,
 
             # option 1
-            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account',
+            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account (BattleTag)',
 
             # option 2
-            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account manually (using account ID)',
+            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account (Account ID)',
 
             # option 3
             f'{COLOR_FAILURE}(-){COLOR_RESET} Remove an account' + (
-                f' {COLOR_FAILURE}(no accounts added!){COLOR_RESET}' if not c.config['accounts'] else ''
+                f' {COLOR_FAILURE}(No accounts linked !){COLOR_RESET}' if not c.config['accounts'] else ''
             ),
 
             # option 4
@@ -109,11 +99,6 @@ def menu(args):
             f'{earning if c.config["earn_owl"] else not_earning}',
 
             # option 6
-            f'{stop_text if c.config["earn_owc"] else start_text} earning Contenders Skins '
-            f'{earning if c.config["earn_owc"] else not_earning} '
-            f'{COLOR_EXPERIMENTAL}(experimental!){COLOR_RESET}',
-
-            # option 7
             'Exit',
         ]
         menu_str = '\n'.join([f'  {COLOR_OPTIONS}{i+1}.{COLOR_RESET} {e}' for i, e in enumerate(menu_entries)])
@@ -125,18 +110,26 @@ def menu(args):
             if option not in range(len(menu_entries)):
                 raise ValueError
         except ValueError:
-            interrupt(f'{COLOR_FAILURE}Invalid number.{COLOR_RESET}')
+            interrupt(f'{COLOR_FAILURE}Invalid option.{COLOR_RESET}')
+            time.sleep(1)
+            os.system('cls')
             continue
 
         # starting bot
         if option == 0:
             if not c.config['accounts']:
-                interrupt(f'{COLOR_FAILURE}To start a bot, add at least one account first.{COLOR_RESET}')
+                os.system('cls')
+                interrupt(f'{COLOR_FAILURE}To start the bot, please add at least one account.{COLOR_RESET}')
+                time.sleep(3)
+                os.system('cls')
                 continue
 
             if not any([c.config['earn_owl'], c.config['earn_owc']]):
-                interrupt(f'{COLOR_FAILURE}You need to enable option 4 and/or 5 '
-                          f'in order to start a bot.{COLOR_RESET}')
+                os.system('cls')
+                interrupt(f'{COLOR_FAILURE}You need to enable earning '
+                          f'in order to start the bot.{COLOR_RESET}')
+                time.sleep(2.5)
+                os.system('cls')
                 continue
 
             start_bot(
@@ -147,6 +140,7 @@ def menu(args):
 
         # adding an account
         elif option == 1:
+            os.system('cls')
             print(f'\n{COLOR_NEUTRAL}Adding an account...{COLOR_RESET}')
             while True:
                 print(f'What is your username? (for example {COLOR_NEUTRAL}myUsername{COLOR_RESET} '
@@ -159,10 +153,14 @@ def menu(args):
                     username = input(' >>> ').strip()
                 except KeyboardInterrupt:
                     interrupt(leave_text)
+                    time.sleep(0.5)
+                    os.system('cls')
                     break
 
                 if not username:
                     interrupt(leave_text)
+                    time.sleep(0.5)
+                    os.system('cls')
                     break
 
                 url = USERS_API_URL % (urllib.parse.quote(username),)
@@ -175,6 +173,8 @@ def menu(args):
                         interrupt(f'{COLOR_FAILURE}It seems that profiles API that is used to retrieve your account ID '
                                   f'is currently under maintenance. Consider adding your account manually.{COLOR_RESET}')
                         user_dict = None
+                        time.sleep(5)
+                        os.system('cls')
                         break
 
                 if not users:
@@ -201,6 +201,8 @@ def menu(args):
 
                         if not number:
                             interrupt(leave_text)
+                            time.sleep(0.5)
+                            os.system('cls')
                             user_dict = None
                             break
 
@@ -238,6 +240,7 @@ def menu(args):
 
         # adding an account manually (using ID)
         elif option == 2:
+            os.system('cls')
             print(f'\n{COLOR_NEUTRAL}Adding an account using account ID{COLOR_RESET}')
             print('Where to get your account ID: '
                   'https://github.com/ucarno/ow-league-tokens#manually-getting-your-account-id')
@@ -255,6 +258,8 @@ def menu(args):
 
                 if number.strip() == '':
                     interrupt(leave_text)
+                    time.sleep(0.5)
+                    os.system('cls')
                     break
 
                 number = number.strip()
@@ -273,6 +278,7 @@ def menu(args):
 
                     print(f'\nWant to add more? {COLOR_NEUTRAL}(y/N){COLOR_RESET}')
                     add_more = input(' >>> ').lower() == 'y'
+                    os.system('cls')
 
                     print()
 
@@ -283,17 +289,21 @@ def menu(args):
 
         # removing an account
         elif option == 3:
+            os.system('cls')
             print(f'\n{COLOR_NEUTRAL}Account removal{COLOR_RESET}')
 
             accounts = c.config['accounts']
             if len(accounts) == 0:
                 interrupt(f'{COLOR_FAILURE}There are no accounts to remove.{COLOR_RESET}')
-
+                time.sleep(1)
+                os.system('cls')
+            
             # 1 account, deleting
             elif len(accounts) == 1:
                 accounts.clear()
                 c.save()
                 interrupt(f'{COLOR_SUCCESS}Account removed!{COLOR_RESET}')
+                os.system('cls')
 
             # more than 1 account
             else:
@@ -319,12 +329,16 @@ def menu(args):
 
                     if number.strip() == '':
                         interrupt(leave_text)
+                        time.sleep(0.5)
+                        os.system('cls')
                         break
 
                     if number == '*':
                         c.config['accounts'].clear()
                         c.save()
                         interrupt(f'{COLOR_SUCCESS}All accounts removed!{COLOR_RESET}')
+                        time.sleep(1)
+                        os.system('cls')
                         break
 
                     if not number.isdigit() or int(number)-1 not in range(len(accounts)):
@@ -335,14 +349,19 @@ def menu(args):
                     del c.config['accounts'][account_id]
                     c.save()
                     interrupt(f'{COLOR_SUCCESS}Account removed!{COLOR_RESET}')
+                    time.sleep(1) 
+                    os.system('cls')
                     break
 
         elif option == 4:
+            os.system('cls')    
             print(f'\n{COLOR_NEUTRAL}List of your accounts{COLOR_RESET}')
 
             accounts = c.config['accounts']
             if len(accounts) == 0:
                 interrupt(f'{COLOR_FAILURE}There are no accounts.{COLOR_RESET}')
+                time.sleep(1)
+                os.system('cls')
 
             accounts = [(key, value) for key, value in accounts.items()]
             accounts_str = '\n'.join([(
@@ -359,18 +378,13 @@ def menu(args):
             c.config['earn_owl'] = not c.config['earn_owl']
             c.save()
             interrupt(text)
+            time.sleep(1)
+            os.system('cls')
 
-        # switching owc skins
         elif option == 6:
-            print(f'\n{COLOR_NEUTRAL}Contenders Skins{COLOR_RESET}')
-            text = f'You will {COLOR_FAILURE}no longer earn{COLOR_RESET} Contenders Skins.' if c.config['earn_owc'] else \
-                   f'You will {COLOR_SUCCESS}now earn{COLOR_RESET} Contenders Skins!'
-            c.config['earn_owc'] = not c.config['earn_owc']
-            c.save()
-            interrupt(text)
-
-        elif option == 7:
-            print('Bye!')
+            os.system('cls')
+            print(f'{COLOR_OPTIONS}Thanks for using the bot :D !{COLOR_RESET}')
+            time.sleep(1.5)
             exit()
 
 
