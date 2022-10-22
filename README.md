@@ -60,3 +60,7 @@ To use it, just clone this repository to your Docker Host.
 3. `docker run -d ow-league-tokens:latest` to start new container using the image.
    * `docker container ls` to check if container is running
    * `docker logs ow-league-tokens` to view container's logs
+
+### Troubleshooting
+1. In case the program wont launch (The console close itself instantly after executing main.py or builded .exe), it can maybe due to missing dependencies.
+   To fix this error, do to .scripts folder and execute the install dependencies.cmd file and test again.
