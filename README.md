@@ -61,6 +61,6 @@ To use it, just clone this repository to your Docker Host.
    * `docker container ls` to check if container is running
    * `docker logs ow-league-tokens` to view container's logs
 
-### Troubleshooting
+## Troubleshooting
 1. In case the program wont launch (The console close itself instantly after executing main.py or builded .exe), it can maybe due to missing dependencies.
    To fix this error, do to .scripts folder and execute the install dependencies.cmd file and test again.
