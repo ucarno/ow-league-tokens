@@ -4,5 +4,5 @@ services:
 
   ow-league-tokens:
     build: .
-    entrypoint: [ "python", "./main.py", "nomenu", "--owl", "--owc", "--ids", "id1", "and so on" ]
+    entrypoint: [ "python", "./src/main.py", "nomenu", "--owl", "--owc", "--ids", "1123", "2432", "and so on..." ]
     restart: unless-stopped
