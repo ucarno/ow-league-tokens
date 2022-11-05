@@ -9,6 +9,10 @@ missing some.
 
 ![demo](https://i.ibb.co/7YCrt1x/demo.gif)
 
+## How does this work?
+This bot works by sending same tracking requests as a browser when you
+watch league streams on an official Overwatch League website.
+
 ## Installation
 1. Download zip archive from [releases page](https://github.com/ucarno/ow-league-tokens/releases/latest).
 2. Extract `OverwatchTokenFarmer` directory wherever you want.
@@ -19,8 +23,17 @@ missing some.
 3. Start bot.
 4. Done! Bot is now working and next time it will remember your username.
 
+## How to update
+1. Download new release from [releases page](https://github.com/ucarno/ow-league-tokens/releases/latest).
+2. Extract `OverwatchTokenFarmer` directory wherever you want.
+3. Move your `config.json` file from old location to new location.
+
+## Issues
+Feel free to [create new issue](https://github.com/ucarno/ow-league-tokens/issues/new) if something is not working for you.
+Please note that getting your tokens can take up to 48 hours and getting extra rewards could take even more time.
+
 ## Command line arguments
-Program can be started without menu using `python main.py nomenu`. But to do this you need to
+Program can be started without menu using `python main.py nomenu` command. But to do this you need to
 configure program using menu or use arguments.
 
 ### Arguments
@@ -28,7 +41,9 @@ Arguments can be used only when starting program using `nomenu` command:
 * `--owl` | `--no-owl` - either earn OWL Tokens or not - default is config value or `true` if not specified
 * `--owc` | `--no-owc` - either earn Contenders Skins or not - default is config value or `true` if not specified
 * `--ids` - list of integer IDs that will be used instead of IDs from config
-(you can get your ID from this API: https://playoverwatch.com/en-us/search/account-by-name/username/) or [manually](#manually-getting-your-account-id).
+(you can get your ID from [this API](https://playoverwatch.com/en-us/search/account-by-name/username/) 
+or [manually](#manually-getting-your-account-id)).
+* `--debug` | `--no-debug` - either enable or disable debug messages - default is config value or disabled if not specified
 
 ### Examples
 * `python main.py nomenu --owl --no-owc` - earn OWL Tokens, do not earn Contenders Skins, IDs from config
@@ -60,3 +75,8 @@ To use it, just clone this repository to your Docker Host.
 3. `docker run -d ow-league-tokens:latest` to start new container using the image.
    * `docker container ls` to check if container is running
    * `docker logs ow-league-tokens` to view container's logs
+
+## Contribution
+Feel free to contribute!
+* Thanks, [@nipser](https://github.com/nipser) and [@probablypablito](https://github.com/probablypablito) for Docker support!
+* Also thanks to everyone for using this bot or leaving feedback!
