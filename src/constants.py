@@ -37,5 +37,6 @@ COLORS = (
     ('&f', COLOR_FAILURE),
     ('&n', COLOR_NEUTRAL),
     ('&o', COLOR_OPTIONS),
-    ('&r', COLOR_RESET)
+    ('&e', COLOR_EXPERIMENTAL),
+    ('&r', COLOR_RESET),
 )

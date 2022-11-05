@@ -10,7 +10,7 @@ class Config:
             with open('config.json', 'r', encoding='utf-8') as f:
                 old_config = json.loads(f.read())
 
-                # checking for old config
+                # checking if very old config
                 if 'account_id' in old_config:
                     config = self.get_default()
                     config['accounts'][old_config['account_id']] = {
@@ -20,6 +20,10 @@ class Config:
                     }
                 else:
                     config = old_config
+
+                # checking if old config
+                if 'debug' not in config:
+                    config['debug'] = False
 
                 f.close()
 
@@ -39,5 +43,6 @@ class Config:
         return {
             'accounts': {},
             'earn_owl': True,
-            'earn_owc': True
+            'earn_owc': True,
+            'debug': False
         }

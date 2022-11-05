@@ -1,5 +1,5 @@
 .idea/
-config.json
+src/config.json
 OverwatchTokenFarmer.spec
 
 __pycache__/

@@ -12,19 +12,20 @@ from sys import exit
 from colorama import init
 
 from config import Config
-from constants import (
-    COLOR_NEUTRAL, COLOR_RESET, COLOR_FAILURE, COLOR_SUCCESS, COLOR_OPTIONS, COLOR_EXPERIMENTAL,
-    OWL_TRACK_URL, OWC_TRACK_URL, OWC_CHECK_URL, OWL_CHECK_URL, USERS_API_URL
-)
+from constants import OWL_TRACK_URL, OWC_TRACK_URL, OWC_CHECK_URL, OWL_CHECK_URL, USERS_API_URL
 from farmer import Farmer
+from utils import print_fmt
 
 
-def start_bot(earn_owl: bool, earn_owc: bool, account_ids: list[int]):
-    print(f'\n  !!! Starting bot for {COLOR_NEUTRAL}{len(account_ids)}{COLOR_RESET} account(s) !!!')
-    print('    League Tokens earning is ' +
-         (f'{COLOR_SUCCESS}Enabled' if earn_owl else f'{COLOR_FAILURE}Disabled') + COLOR_RESET)
-    print('    Contenders Skins earning is ' +
-         (f'{COLOR_SUCCESS}Enabled' if earn_owc else f'{COLOR_FAILURE}Disabled') + COLOR_RESET)
+def start_bot(earn_owl: bool, earn_owc: bool, account_ids: list[int], debug: bool):
+    logging.basicConfig(
+        level=logging.DEBUG if debug else logging.INFO,
+        format='[%(asctime)s - %(levelname)s] %(message)s'
+    )
+
+    print_fmt(f'\n  !!! Starting bot for &n{len(account_ids)}&r account(s) !!!')
+    print_fmt('    League Tokens earning is ' + (f'&sEnabled' if earn_owl else f'&fDisabled') + '&r')
+    print_fmt('    Contenders Skins earning is ' + ('&sEnabled' if earn_owc else '&fDisabled') + '&r')
 
     sleep(1)
     print()
@@ -57,52 +58,52 @@ def start_bot(earn_owl: bool, earn_owc: bool, account_ids: list[int]):
     try:
         loop.run_forever()
     except KeyboardInterrupt:
-        print('Bye!')
+        print_fmt('Bye!')
         exit()
 
 
 def menu(args):
     c = Config()
 
-    start_text = f'{COLOR_SUCCESS}Start{COLOR_RESET}'
-    stop_text = f'{COLOR_FAILURE}Stop{COLOR_RESET}'
+    start_text = '&sStart&r'
+    stop_text = '&fStop&r'
 
-    earning = f'{COLOR_NEUTRAL}[earning]{COLOR_RESET}'
-    not_earning = f'{COLOR_NEUTRAL}[not earning]{COLOR_RESET}'
+    earning = '&n[earning]&r'
+    not_earning = '&n[not earning]&r'
 
     def interrupt(t: str):
-        print(t, end='\n')
+        print_fmt(t)
         sleep(0.5)  # adding a little delay so user can see that something happened
         print()
 
     while True:
-        print(f'{COLOR_NEUTRAL}Select an option:{COLOR_RESET}')
+        print_fmt('&nSelect an option:&r')
 
         bot_text = 'Start bot!'
         if not c.config['accounts']:
-            bot_text += f' {COLOR_FAILURE}(no accounts added!){COLOR_RESET}'
+            bot_text += ' &f(no accounts added!)&r'
         else:
-            bot_text += f' {COLOR_NEUTRAL}[{len(c.config["accounts"])} account(s)]{COLOR_RESET}'
+            bot_text += f' &n[{len(c.config["accounts"])} account(s)]&r'
         if not any([c.config['earn_owl'], c.config['earn_owc']]):
-            bot_text += f' {COLOR_FAILURE}(nothing to earn!){COLOR_RESET}'
+            bot_text += ' &f(nothing to earn!)&r'
 
         menu_entries = [
             # option 0
             bot_text,
 
             # option 1
-            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account',
+            '&s(+)&r Add an account',
 
             # option 2
-            f'{COLOR_SUCCESS}(+){COLOR_RESET} Add an account manually (using account ID)',
+            '&s(+)&r Add an account manually (using account ID)',
 
             # option 3
-            f'{COLOR_FAILURE}(-){COLOR_RESET} Remove an account' + (
-                f' {COLOR_FAILURE}(no accounts added!){COLOR_RESET}' if not c.config['accounts'] else ''
+            '&f(-)&r Remove an account' + (
+                f' &f(no accounts added!)&r' if not c.config['accounts'] else ''
             ),
 
             # option 4
-            f'List your accounts',
+            'List your accounts',
 
             # option 5
             f'{stop_text if c.config["earn_owl"] else start_text} earning OWL Tokens '
@@ -110,50 +111,52 @@ def menu(args):
 
             # option 6
             f'{stop_text if c.config["earn_owc"] else start_text} earning Contenders Skins '
-            f'{earning if c.config["earn_owc"] else not_earning} '
-            f'{COLOR_EXPERIMENTAL}(experimental!){COLOR_RESET}',
+            f'{earning if c.config["earn_owc"] else not_earning} &e(experimental!)&r',
 
             # option 7
+            f'{"&fDisable" if c.config["debug"] else "&sEnable"}&r debug messages '
+            f'&n[{"enabled" if c.config["debug"] else "disabled"}]&r',
+
+            # option 8
             'Exit',
         ]
-        menu_str = '\n'.join([f'  {COLOR_OPTIONS}{i+1}.{COLOR_RESET} {e}' for i, e in enumerate(menu_entries)])
+        menu_str = '\n'.join([f'  &o{i+1}.&r {e}' for i, e in enumerate(menu_entries)])
 
-        print(menu_str)
+        print_fmt(menu_str)
 
         try:
             option = int(input(' >>> ')) - 1
             if option not in range(len(menu_entries)):
                 raise ValueError
         except ValueError:
-            interrupt(f'{COLOR_FAILURE}Invalid number.{COLOR_RESET}')
+            interrupt('&fInvalid number.&r')
             continue
 
         # starting bot
         if option == 0:
             if not c.config['accounts']:
-                interrupt(f'{COLOR_FAILURE}To start a bot, add at least one account first.{COLOR_RESET}')
+                interrupt('&fTo start a bot, add at least one account first.&r')
                 continue
 
             if not any([c.config['earn_owl'], c.config['earn_owc']]):
-                interrupt(f'{COLOR_FAILURE}You need to enable option 4 and/or 5 '
-                          f'in order to start a bot.{COLOR_RESET}')
+                interrupt('&fYou need to enable option 4 and/or 5 in order to start a bot.&r')
                 continue
 
             start_bot(
                 earn_owl=c.config['earn_owl'],
                 earn_owc=c.config['earn_owc'],
                 account_ids=[int(i) for i in c.config['accounts'].keys()],
+                debug=c.config['debug']
             )
 
         # adding an account
         elif option == 1:
-            print(f'\n{COLOR_NEUTRAL}Adding an account...{COLOR_RESET}')
+            print_fmt('\n&nAdding an account...&r')
             while True:
-                print(f'What is your username? (for example {COLOR_NEUTRAL}myUsername{COLOR_RESET} '
-                      f'or {COLOR_NEUTRAL}myUsername#1234{COLOR_RESET}) '
-                      f'- leave {COLOR_OPTIONS}blank{COLOR_RESET} to exit')
+                print_fmt('What is your username? (for example &nmyUsername&r or &nmyUsername#1234&r) '
+                      '- leave &oblank&r to exit')
 
-                leave_text = f'{COLOR_SUCCESS}Alright!{COLOR_RESET}'
+                leave_text = '&sAlright!&r'
 
                 try:
                     username = input(' >>> ').strip()
@@ -172,24 +175,24 @@ def menu(args):
                     try:
                         users: list = json.loads(response_text)
                     except JSONDecodeError:
-                        interrupt(f'{COLOR_FAILURE}It seems that profiles API that is used to retrieve your account ID '
-                                  f'is currently under maintenance. Consider adding your account manually.{COLOR_RESET}')
+                        interrupt('&fIt seems that profiles API that is used to retrieve your account ID '
+                                  'is currently under maintenance. Consider adding your account manually.&r')
                         user_dict = None
                         break
 
                 if not users:
-                    print(f'{COLOR_FAILURE}Users with that username not found.{COLOR_RESET}', end='\n\n')
+                    print_fmt('&fUsers with that username not found.&r', end='\n\n')
                     continue
 
                 if len(users) == 1:
                     user_dict = users[0]
                 else:
-                    print(f'Found {COLOR_NEUTRAL}{len(users)}{COLOR_RESET} users with that username. You are..?')
+                    print_fmt(f'Found &n{len(users)}&r users with that username. You are..?')
                     for index, item in enumerate(users):
-                        print(f'  {COLOR_OPTIONS}{index + 1}.{COLOR_RESET} {COLOR_NEUTRAL}{item["name"]}{COLOR_RESET} '
-                              f'(level: {item["playerLevel"]}, '
-                              f'platform: {item["platform"].upper()})')
-                    print(f'{COLOR_OPTIONS}  Leave blank to leave{COLOR_RESET}')
+                        print_fmt(f'  &o{index + 1}.&r &n{item["name"]}&r '
+                                  f'(level: {item["playerLevel"]}, '
+                                  f'platform: {item["platform"].upper()})')
+                    print_fmt('&o  Leave blank to leave&r')
 
                     while True:
                         try:
@@ -205,7 +208,7 @@ def menu(args):
                             break
 
                         if not number.isdigit() or int(number) - 1 not in range(len(users)):
-                            print(f'{COLOR_FAILURE}Invalid number.{COLOR_RESET}')
+                            print_fmt('&fInvalid number.&r')
                             continue
                         user_dict = users[int(number) - 1]
                         break
@@ -215,7 +218,7 @@ def menu(args):
 
                 account_id = str(user_dict['id'])
                 if account_id in c.config['accounts']:
-                    interrupt(f'{COLOR_FAILURE}This account is already added!{COLOR_RESET}')
+                    interrupt('&fThis account is already added!&r')
                     break
 
                 else:
@@ -225,9 +228,9 @@ def menu(args):
                         'platform': user_dict['platform'],
                     }
                     c.save()
-                    print(f'{COLOR_SUCCESS}Account added!{COLOR_RESET}')
+                    print_fmt('&sAccount added!&r')
 
-                    print(f'\nWant to add more? {COLOR_NEUTRAL}(y/N){COLOR_RESET}')
+                    print_fmt('\nWant to add more? &n(y/N)&r')
                     add_more = input(' >>> ').lower() == 'y'
 
                     print()
@@ -238,13 +241,13 @@ def menu(args):
 
         # adding an account manually (using ID)
         elif option == 2:
-            print(f'\n{COLOR_NEUTRAL}Adding an account using account ID{COLOR_RESET}')
-            print('Where to get your account ID: '
+            print_fmt('\n&nAdding an account using account ID&r')
+            print_fmt('Where to get your account ID: '
                   'https://github.com/ucarno/ow-league-tokens#manually-getting-your-account-id')
 
-            leave_text = f'{COLOR_SUCCESS}Alright!{COLOR_RESET}'
+            leave_text = '&sAlright!&r'
 
-            print(f'{COLOR_OPTIONS}Enter your account ID (leave blank to exit):{COLOR_RESET}')
+            print_fmt('&oEnter your account ID (leave blank to exit):&r')
 
             while True:
                 try:
@@ -259,7 +262,7 @@ def menu(args):
 
                 number = number.strip()
                 if not number.isdigit() or int(number) < 1:
-                    print(f'{COLOR_FAILURE}Account ID must be a number.{COLOR_RESET}')
+                    print_fmt('&fAccount ID must be a number.&r')
                     continue
 
                 else:
@@ -269,46 +272,46 @@ def menu(args):
                         'platform': '???',
                     }
                     c.save()
-                    print(f'{COLOR_SUCCESS}Account added!{COLOR_RESET}')
+                    print_fmt('&sAccount added!&r')
 
-                    print(f'\nWant to add more? {COLOR_NEUTRAL}(y/N){COLOR_RESET}')
+                    print_fmt('\nWant to add more? &n(y/N)&r')
                     add_more = input(' >>> ').lower() == 'y'
 
                     print()
 
                     if add_more:
-                        print(f'{COLOR_OPTIONS}Enter your account ID (leave blank to exit):{COLOR_RESET}')
+                        print_fmt('&oEnter your account ID (leave blank to exit):&r')
                         continue
                     break
 
         # removing an account
         elif option == 3:
-            print(f'\n{COLOR_NEUTRAL}Account removal{COLOR_RESET}')
+            print_fmt('\n&nAccount removal:&r')
 
             accounts = c.config['accounts']
             if len(accounts) == 0:
-                interrupt(f'{COLOR_FAILURE}There are no accounts to remove.{COLOR_RESET}')
+                interrupt('&fThere are no accounts to remove.&r')
 
             # 1 account, deleting
             elif len(accounts) == 1:
                 accounts.clear()
                 c.save()
-                interrupt(f'{COLOR_SUCCESS}Account removed!{COLOR_RESET}')
+                interrupt('&sAccount removed!&r')
 
             # more than 1 account
             else:
-                print('What account do you want to remove?')
+                print_fmt('What account do you want to remove?')
                 accounts = [(key, value) for key, value in accounts.items()]
                 accounts_str = '\n'.join([(
-                    f'  {COLOR_OPTIONS}{i + 1}.{COLOR_RESET} {a[1]["username"]} '
+                    f'  &o{i + 1}.&r {a[1]["username"]} '
                     f'({a[1]["platform"].upper()} - LVL {a[1]["level"]}+)'
                 ) for i, a in enumerate(accounts)])
 
-                print(accounts_str)
-                print(f'{COLOR_OPTIONS}Leave blank to exit.{COLOR_RESET}')
-                print(f'{COLOR_OPTIONS}Type \'{COLOR_NEUTRAL}*{COLOR_OPTIONS}\' to remove all accounts.{COLOR_RESET}')
+                print_fmt(accounts_str)
+                print_fmt('&oLeave blank to exit.&r')
+                print_fmt('&oType \'&n*&o\' to remove all accounts.&r')
 
-                leave_text = f'{COLOR_SUCCESS}Alright!{COLOR_RESET}'
+                leave_text = '&sAlright!&r'
 
                 while True:
                     try:
@@ -324,52 +327,59 @@ def menu(args):
                     if number == '*':
                         c.config['accounts'].clear()
                         c.save()
-                        interrupt(f'{COLOR_SUCCESS}All accounts removed!{COLOR_RESET}')
+                        interrupt('&sAll accounts removed!&r')
                         break
 
                     if not number.isdigit() or int(number)-1 not in range(len(accounts)):
-                        print(f'{COLOR_FAILURE}Invalid number.{COLOR_RESET}')
+                        print_fmt('&fInvalid number.&r')
                         continue
 
                     account_id = accounts[int(number)-1][0]
                     del c.config['accounts'][account_id]
                     c.save()
-                    interrupt(f'{COLOR_SUCCESS}Account removed!{COLOR_RESET}')
+                    interrupt('&sAccount removed!&r')
                     break
 
         elif option == 4:
-            print(f'\n{COLOR_NEUTRAL}List of your accounts{COLOR_RESET}')
+            print_fmt('\n&nList of your accounts:&r')
 
             accounts = c.config['accounts']
             if len(accounts) == 0:
-                interrupt(f'{COLOR_FAILURE}There are no accounts.{COLOR_RESET}')
+                interrupt('&fThere are no accounts.&r')
 
             accounts = [(key, value) for key, value in accounts.items()]
             accounts_str = '\n'.join([(
-                f'  {COLOR_OPTIONS}{i + 1}.{COLOR_RESET} {a[1]["username"]} '
+                f'  &o{i + 1}.&r {a[1]["username"]} '
                 f'({a[1]["platform"].upper()} - LVL {a[1]["level"]}+)'
             ) for i, a in enumerate(accounts)])
             interrupt(accounts_str)
 
         # switching owl tokens
         elif option == 5:
-            print(f'\n{COLOR_NEUTRAL}League Tokens{COLOR_RESET}')
-            text = f'You will {COLOR_FAILURE}no longer earn{COLOR_RESET} League Tokens.' if c.config['earn_owl'] else \
-                   f'You will {COLOR_SUCCESS}now earn{COLOR_RESET} League Tokens!'
+            print_fmt('\n&nLeague Tokens:&r')
+            text = f'You will &fno longer earn&r League Tokens.' if c.config['earn_owl'] else \
+                   'You will &snow earn&r League Tokens!'
             c.config['earn_owl'] = not c.config['earn_owl']
             c.save()
             interrupt(text)
 
         # switching owc skins
         elif option == 6:
-            print(f'\n{COLOR_NEUTRAL}Contenders Skins{COLOR_RESET}')
-            text = f'You will {COLOR_FAILURE}no longer earn{COLOR_RESET} Contenders Skins.' if c.config['earn_owc'] else \
-                   f'You will {COLOR_SUCCESS}now earn{COLOR_RESET} Contenders Skins!'
+            print_fmt('\n&nContenders Skins:&r')
+            text = f'You will &fno longer earn&r Contenders Skins.' if c.config['earn_owc'] else \
+                   'You will &snow earn&r Contenders Skins!'
             c.config['earn_owc'] = not c.config['earn_owc']
             c.save()
             interrupt(text)
 
         elif option == 7:
+            print_fmt('\n&nDebug messages:&r')
+            text = f'You will {("&fno longer see" if c.config["debug"] else "&snow see")}&r debug messages.'
+            c.config['debug'] = not c.config['debug']
+            c.save()
+            interrupt(text)
+
+        elif option == 8:
             print('Bye!')
             exit()
 
@@ -385,31 +395,27 @@ def no_menu(args):
         account_ids = [int(i) for i in c.config['accounts'].keys()]
 
     if not account_ids:
-        print(f'{COLOR_FAILURE}Missing account ids. '
-              f'Account IDs must be specified either in config or via \'--ids\' command line argument.{COLOR_RESET}')
+        print_fmt('&fMissing account ids. '
+              'Account IDs must be specified either in config or via \'--ids\' command line argument.&r')
         exit()
 
     earn_owl = c.config['earn_owl'] if args.owl is None else args.owl
     earn_owc = c.config['earn_owc'] if args.owc is None else args.owc
 
     if not any([earn_owl, earn_owc]):
-        print(f'{COLOR_FAILURE}You need to specify what to earn (tokens, skins or both).{COLOR_RESET}')
+        print_fmt('&fYou need to specify what to earn (tokens, skins or both).&r')
         exit()
 
     start_bot(
         earn_owl=earn_owl,
         earn_owc=earn_owc,
         account_ids=account_ids,
+        debug=c.config['debug'] if args.debug is None else args.debug
     )
 
 
 if __name__ == '__main__':
     init()
-
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='[%(asctime)s - %(levelname)s] %(message)s'
-    )
 
     parser = argparse.ArgumentParser(description='Overwatch League Tokens Farmer help')
     parser.set_defaults(func=menu)
@@ -421,13 +427,19 @@ if __name__ == '__main__':
     nomenu_parser.add_argument(
         '--owl',
         help='earn league tokens, default value is \'true\'',
-        default=True,
+        default=None,
         action=argparse.BooleanOptionalAction
     )
     nomenu_parser.add_argument(
         '--owc',
         help='earn contenders skins, default value is \'true\'',
-        default=True,
+        default=None,
+        action=argparse.BooleanOptionalAction
+    )
+    nomenu_parser.add_argument(
+        '--debug',
+        help='show debug messages, default value is \'false\'',
+        default=None,
         action=argparse.BooleanOptionalAction
     )
     nomenu_parser.add_argument(
@@ -442,5 +454,5 @@ if __name__ == '__main__':
     try:
         parsed_args.func(parsed_args)
     except KeyboardInterrupt:
-        print('\nBye!')
+        print_fmt('\nBye!')
         exit()
