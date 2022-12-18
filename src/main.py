@@ -92,7 +92,7 @@ def menu(args):
             bot_text,
 
             # option 1
-            '&s(+)&r Add an account',
+            '&s(+)&r Add an account by username &f(NOT WORKING)',
 
             # option 2
             '&s(+)&r Add an account manually (using account ID)',
@@ -111,7 +111,7 @@ def menu(args):
 
             # option 6
             f'{stop_text if c.config["earn_owc"] else start_text} earning Contenders Skins '
-            f'{earning if c.config["earn_owc"] else not_earning} &e(experimental!)&r',
+            f'{earning if c.config["earn_owc"] else not_earning} &e(experimental!*)&r',
 
             # option 7
             f'{"&fDisable" if c.config["debug"] else "&sEnable"}&r debug messages '
@@ -152,6 +152,13 @@ def menu(args):
         # adding an account
         elif option == 1:
             print_fmt('\n&nAdding an account...&r')
+            interrupt('&fBlizzard has made changes to their profiles API, so ID is now irretrievable this way. '
+                      'Consider manually getting your ID and using &eoption 3&f. '
+                      'To get your ID, just follow instructions from here: '
+                      '&ehttps://github.com/ucarno/ow-league-tokens#manually-getting-your-account-id')
+            continue
+
+            # leaving the code in case there is another way of retrieving ID using username or API will change
             while True:
                 print_fmt('What is your username? (for example &nmyUsername&r or &nmyUsername#1234&r) '
                       '- leave &oblank&r to exit')
@@ -189,9 +196,7 @@ def menu(args):
                 else:
                     print_fmt(f'Found &n{len(users)}&r users with that username. You are..?')
                     for index, item in enumerate(users):
-                        print_fmt(f'  &o{index + 1}.&r &n{item["name"]}&r '
-                                  f'(level: {item["playerLevel"]}, '
-                                  f'platform: {item["platform"].upper()})')
+                        print_fmt(f'  &o{index + 1}.&r &n{item["battleTag"]}&r')
                     print_fmt('&o  Leave blank to leave&r')
 
                     while True:
@@ -243,7 +248,7 @@ def menu(args):
         elif option == 2:
             print_fmt('\n&nAdding an account using account ID&r')
             print_fmt('Where to get your account ID: '
-                  'https://github.com/ucarno/ow-league-tokens#manually-getting-your-account-id')
+                      'https://github.com/ucarno/ow-league-tokens#manually-getting-your-account-id')
 
             leave_text = '&sAlright!&r'
 
@@ -266,11 +271,7 @@ def menu(args):
                     continue
 
                 else:
-                    c.config['accounts'][number] = {
-                        'username': f'ID:{number}',
-                        'level': '???',
-                        'platform': '???',
-                    }
+                    c.config['accounts'][number] = {'username': f'ID:{number}'}
                     c.save()
                     print_fmt('&sAccount added!&r')
 
@@ -302,10 +303,7 @@ def menu(args):
             else:
                 print_fmt('What account do you want to remove?')
                 accounts = [(key, value) for key, value in accounts.items()]
-                accounts_str = '\n'.join([(
-                    f'  &o{i + 1}.&r {a[1]["username"]} '
-                    f'({a[1]["platform"].upper()} - LVL {a[1]["level"]}+)'
-                ) for i, a in enumerate(accounts)])
+                accounts_str = '\n'.join([f'  &o{i + 1}.&r {a[1]["username"]} ' for i, a in enumerate(accounts)])
 
                 print_fmt(accounts_str)
                 print_fmt('&oLeave blank to exit.&r')
@@ -348,10 +346,7 @@ def menu(args):
                 interrupt('&fThere are no accounts.&r')
 
             accounts = [(key, value) for key, value in accounts.items()]
-            accounts_str = '\n'.join([(
-                f'  &o{i + 1}.&r {a[1]["username"]} '
-                f'({a[1]["platform"].upper()} - LVL {a[1]["level"]}+)'
-            ) for i, a in enumerate(accounts)])
+            accounts_str = '\n'.join([f'  &o{i + 1}.&r {a[1]["username"]} ' for i, a in enumerate(accounts)])
             interrupt(accounts_str)
 
         # switching owl tokens
@@ -369,6 +364,13 @@ def menu(args):
             text = f'You will &fno longer earn&r Contenders Skins.' if c.config['earn_owc'] else \
                    'You will &snow earn&r Contenders Skins!'
             c.config['earn_owc'] = not c.config['earn_owc']
+
+            if c.config['earn_owc']:
+                print_fmt('&fPlease note that contenders skins earning is not working for now (18.12.2022). '
+                          'It may and may not occasionally start working in future, no one knows. '
+                          'You can find more info about this issue here: '
+                          '&ehttps://github.com/shirokumacode/overwatch-omnic-rewards/issues/28#issuecomment-1194812086&r')
+
             c.save()
             interrupt(text)
 

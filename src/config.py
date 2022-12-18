@@ -14,9 +14,7 @@ class Config:
                 if 'account_id' in old_config:
                     config = self.get_default()
                     config['accounts'][old_config['account_id']] = {
-                        'username': 'UNKNOWN',
-                        'platform': 'UNKNOWN',
-                        'level': 'UNKNOWN',
+                        'username': f'ID:{old_config["account_id"]}'
                     }
                 else:
                     config = old_config

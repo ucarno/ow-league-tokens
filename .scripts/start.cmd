@@ -1,1 +1,1 @@
-..\venv\Scripts\activate&cd ..&title Overwatch League Token Farmer&python main.py
+..\venv\Scripts\activate&cd ..\src&title Overwatch League Token Farmer&python main.py
