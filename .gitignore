@@ -1,8 +1,11 @@
 .idea/
 src/config.json
-OverwatchTokenFarmer.spec
+ow-league-tokens.spec
 
 __pycache__/
 build/
 dist/
 venv/
+
+src/profiles/
+src/debug/
