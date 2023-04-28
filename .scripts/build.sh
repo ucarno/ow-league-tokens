@@ -6,19 +6,19 @@ cd dist
 rm -r *
 
 cd ..
-pyinstaller .\\src\\main.py --noconfirm --name OverwatchTokenFarmer --runtime-hook=".\hooks\use_lib.py"
+pyinstaller .\\src\\main.py --noconfirm --name ow-league-tokens --runtime-hook=".\hooks\use_lib.py"
 
 cd dist
-mv OverwatchTokenFarmer lib
-mkdir OverwatchTokenFarmer
+mv ow-league-tokens lib
+mkdir ow-league-tokens
 
-mv lib OverwatchTokenFarmer/lib
-cd OverwatchTokenFarmer
+mv lib ow-league-tokens/lib
+cd ow-league-tokens
 
-mv lib/OverwatchTokenFarmer.exe .
-mv lib/python310.dll .
+mv lib/ow-league-tokens.exe .
+mv lib/python311.dll .
 mv lib/base_library.zip .
-echo "OverwatchTokenFarmer.exe nomenu && pause" > Start_Without_Menu.bat
+echo "ow-league-tokens.exe --nomenu && pause" > Start_Without_Menu.bat
 
 cd ..
-powershell Compress-Archive OverwatchTokenFarmer OverwatchTokenFarmer.zip
+powershell Compress-Archive ow-league-tokens ow-league-tokens.zip
