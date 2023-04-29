@@ -165,3 +165,4 @@ def bootstrap(config: dict):
 
     for thread in threads:
         thread.start()
+        sleep(3)
