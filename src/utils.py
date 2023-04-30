@@ -109,6 +109,7 @@ def check_for_new_version():
                           f'but version &m{latest_version}&g is available!')
         os.environ.setdefault(VERSION_ENVIRON, 'true')
     else:
+        log_info(log_src, 'No new version available!')
         os.environ.setdefault(VERSION_ENVIRON, 'false')
 
 

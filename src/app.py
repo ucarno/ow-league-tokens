@@ -11,7 +11,7 @@ import undetected_chromedriver as uc
 
 from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, YOUTUBE_AUTH_ANY_RE, \
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE
-from utils import log_error, log_info, log_debug, kill, get_active_stream, is_debug
+from utils import log_error, log_info, log_debug, kill, get_active_stream, is_debug, check_for_new_version
 
 KILL_SENTINEL = object()
 
@@ -134,6 +134,8 @@ def bootstrap(config: dict):
         level=logging.DEBUG if config['debug'] else logging.INFO,
         format='[%(asctime)s - %(levelname)s] %(message)s'
     )
+
+    check_for_new_version()
 
     threads = []
 

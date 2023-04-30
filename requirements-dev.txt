@@ -1,1 +1,2 @@
-pyinstaller
+pyinstaller==5.10.1
+charset-normalizer==2.1.0
