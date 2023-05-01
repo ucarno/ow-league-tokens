@@ -1,14 +1,21 @@
 import argparse
+import os
+import sys
 
 from colorama import init
 
 from app import bootstrap
-from constants import PATH_PROFILES, PATH_DEBUG
+from constants import PATH_PROFILES, PATH_DEBUG, PATH_ROOT
 from menu import menu
 from utils import load_config
 
 
 if __name__ == '__main__':
+    if hasattr(sys, 'frozen'):
+        os.environ['REQUESTS_CA_BUNDLE'] = (
+            str(PATH_ROOT.joinpath('lib').joinpath('certifi').joinpath('cacert.pem').absolute())
+        )
+
     init()
 
     for path in (PATH_PROFILES, PATH_DEBUG):

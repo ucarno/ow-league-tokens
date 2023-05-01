@@ -3,6 +3,7 @@ from pathlib import Path
 from colorama import Fore
 
 CURRENT_VERSION = '2.0.0'
+UPDATE_DOWNLOAD_URL = 'https://github.com/ucarno/ow-league-tokens/releases/latest'
 
 DEBUG_ENVIRON = 'OW_LEAGUE_TOKENS_DEBUG'
 

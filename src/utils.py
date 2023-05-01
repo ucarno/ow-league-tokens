@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 
 from constants import TMPL_LIVE_STREAM_EMBED_URL, COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, \
-    CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG
+    CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL
 
 
 def load_config() -> dict:
@@ -92,8 +92,8 @@ def check_for_new_version():
         return
 
     if response.status_code == 200 and latest_version != CURRENT_VERSION:
-        log_info(log_src, f'&gNew version available! You are on version &m{CURRENT_VERSION}&g, '
-                          f'but version &m{latest_version}&g is available!')
+        log_info(log_src, f'&gNew version available! You are on version &r{CURRENT_VERSION}&g, '
+                          f'but version &m{latest_version}&g is available! Download here: &m{UPDATE_DOWNLOAD_URL}')
         os.environ.setdefault(VERSION_ENVIRON, 'true')
     else:
         log_info(log_src, 'No new version available!')
