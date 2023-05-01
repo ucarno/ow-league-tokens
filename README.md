@@ -2,11 +2,11 @@
 This is an app that watches League streams for you on YouTube! Still experimental, [issues](#possible-issues) may occur.
 
 Also, no contenders skins support as contenders skins are earned via Twitch drops - not watching on YouTube.
-To earn contenders skins in the same automated fashion, use [this](https://github.com/DevilXD/TwitchDropsMiner).
+To earn contenders skins in the same automated fashion, try [this](https://github.com/DevilXD/TwitchDropsMiner) app.
 
 <div align="center">
 
-[![Buy me a coffee](https://i.imgur.com/NOoWZ8G.png)](https://ko-fi.com/ucarno)
+[![Support my work](https://i.imgur.com/NOoWZ8G.png)](https://ko-fi.com/ucarno)
 
 </div>
 
@@ -24,7 +24,7 @@ To earn contenders skins in the same automated fashion, use [this](https://githu
 1. Download latest version [here](https://github.com/ucarno/ow-league-tokens/releases/latest).
 2. Unpack zip anywhere you want.
 3. Run `ow-league-tokens.exe` to open the app.
-4. Ignore Window Defender's complaints about "unknown publisher".
+4. Ignore Windows Defender's complaints about "unknown publisher".
 
 ### Linux
 You need to have GUI to log into your Google account(s). If you don't have GUI and can't install/use it, then
@@ -80,7 +80,7 @@ Feel free to contribute by
 [opening new issue](https://github.com/ucarno/ow-league-tokens/issues/new),
 [making a pull request](https://github.com/ucarno/ow-league-tokens/pulls) or
 [buying me a coffee](https://ko-fi.com/ucarno).
-Also thanks to everyone for using this bot and leaving feedback!
+Thanks to everyone for using this bot, contributing and/or leaving feedback!
 
 ## Disclaimer
 This app is not affiliated with Blizzard Entertainment, Inc. All trademarks are the properties of their respective owners.
