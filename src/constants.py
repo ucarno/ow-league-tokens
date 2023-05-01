@@ -2,7 +2,7 @@ from pathlib import Path
 
 from colorama import Fore
 
-CURRENT_VERSION = '0.1'
+CURRENT_VERSION = '2.0.0'
 
 DEBUG_ENVIRON = 'OW_LEAGUE_TOKENS_DEBUG'
 
@@ -32,6 +32,8 @@ YOUTUBE_AUTH_FAIL_RE = YOUTUBE_AUTH_FAIL.replace('/', r'\/')
 YOUTUBE_AUTH_ANY_RE = f'^({YOUTUBE_AUTH_PASS_RE}|{YOUTUBE_AUTH_FAIL_RE})'
 YOUTUBE_AUTH_PASS_RE = '^' + YOUTUBE_AUTH_PASS_RE
 
+NEW_TAB_URL = 'chrome://new-tab-page/'
+STREAM_CHECK_FREQUENCY = 300  # seconds
 
 COLORS = (
     ('&g', Fore.GREEN),

@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import signal
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -34,52 +33,40 @@ def save_config(new_config: dict):
         f.close()
 
 
-def kill():
-    """Closes an app even inside thread"""
-    os.kill(os.getpid(), signal.SIGTERM)
-
-
-def debug_wait():
-    """Infinite loop so that Chrome driver does not get destroyed during testing"""
-    while True:
-        pass
-
-
 def get_active_stream(channel_id: str) -> str | None:
     """Returns stream url if channel with specified channel_id has active stream"""
     debug = is_debug()
-    log_src = '    LiveCheck'
+    src = 'LiveCheck'
 
     try:
         response = requests.get(TMPL_LIVE_STREAM_EMBED_URL % channel_id, timeout=10).text
     except requests.RequestException as e:
-        log_error(log_src, f'&rLive stream check failed: {str(e)}')
+        log_error(src, f'&rLive stream check failed: {str(e)}')
         tb = traceback.format_exc()
         make_debug_file('failed-getting-active-stream', tb)
         return
 
-    if debug:
-        make_debug_file('get-active-stream', response)
-
     try:
         response_data = json.loads(response.split('ytcfg.set(')[1].split(');window.ytcfg.obfuscatedData_')[0])
-        make_debug_file('get-active-stream-data', response_data)
     except (IndexError, json.JSONDecodeError) as e:
-        log_error(log_src, '&rFailed parsing live stream data from YouTube embed...')
+        log_error(src, '&rFailed parsing live stream data from YouTube embed...')
+        make_debug_file('livecheck_parsing', response)
         return
 
     try:
         player_data = response_data['PLAYER_VARS']
     except KeyError:
-        log_error(log_src, 'Could not access "PLAYER_VARS". Trying to get ID using another method...')
+        log_error(src, 'Could not access "PLAYER_VARS". Trying to get ID using another method...')
+
+        make_debug_file('livecheck_status', json.dumps(response_data))
 
         try:
             video_id = response_data['VIDEO_ID']
-            log_info(log_src, 'Got video ID using another method! '
-                              'But not sure whether it is a live stream or just video...')
+            log_info(src, 'Got video ID using another method! '
+                          'But not sure whether it is a live stream or just video...')
             return TMPL_LIVE_STREAM_URL % video_id
         except KeyError:
-            log_error(log_src, 'Could not get live stream video id.')
+            log_error(src, 'Could not get live stream video id.')
             return
 
     try:
@@ -89,8 +76,8 @@ def get_active_stream(channel_id: str) -> str | None:
         if embedded_player_response['previewPlayabilityStatus']['status'] == 'OK':
             return TMPL_LIVE_STREAM_URL % video_id
     except KeyError as e:
-        log_error(log_src, f'Could not get stream status: {str(e)}.')
-        make_debug_file('failed-getting-active-stream-status', traceback.format_exc() + '\n\n' + json.dumps(player_data))
+        log_error(src, f'Could not get stream status: {str(e)}.')
+        make_debug_file('livecheck_general', traceback.format_exc() + '\n\n' + json.dumps(player_data))
 
 
 def check_for_new_version():
@@ -101,7 +88,7 @@ def check_for_new_version():
         latest_version = response.text.strip()
     except requests.RequestException as e:
         log_error(log_src, f'&rFailed to check for new version: {str(e)}.')
-        make_debug_file('version-check', traceback.format_exc())
+        make_debug_file('versioncheck', traceback.format_exc())
         return
 
     if response.status_code == 200 and latest_version != CURRENT_VERSION:
@@ -115,6 +102,10 @@ def check_for_new_version():
 
 def is_debug() -> bool:
     return os.environ.get(DEBUG_ENVIRON, 'false') == 'true'
+
+
+def set_debug(value: bool):
+    os.environ.setdefault(DEBUG_ENVIRON, 'true' if value else 'false')
 
 
 def make_debug_file(name: str, content: str) -> Path | None:
