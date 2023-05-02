@@ -11,6 +11,7 @@ from utils import load_config
 
 
 if __name__ == '__main__':
+    # fix requests module not able to find certs in lib folder
     if hasattr(sys, 'frozen'):
         os.environ['REQUESTS_CA_BUNDLE'] = (
             str(PATH_ROOT.joinpath('lib').joinpath('certifi').joinpath('cacert.pem').absolute())

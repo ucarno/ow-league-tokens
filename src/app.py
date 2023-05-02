@@ -19,8 +19,8 @@ info = lambda msg: log_info(f'Bot', msg)
 debug = lambda msg: log_debug(f'Bot', msg)
 
 driver_error = lambda _driver, msg: log_error(f'Chrome - \'{get_driver_profile(_driver)}\'', msg)
-driver_info = lambda _driver, msg: log_error(f'Chrome - \'{get_driver_profile(_driver)}\'', msg)
-driver_debug = lambda _driver, msg: log_error(f'Chrome - \'{get_driver_profile(_driver)}\'', msg)
+driver_info = lambda _driver, msg: log_info(f'Chrome - \'{get_driver_profile(_driver)}\'', msg)
+driver_debug = lambda _driver, msg: log_debug(f'Chrome - \'{get_driver_profile(_driver)}\'', msg)
 
 DRIVERS: list[uc.Chrome] = []
 
@@ -34,14 +34,15 @@ def get_driver(profile: str, is_headless: bool) -> uc.Chrome:
     options.add_argument('--autoplay-policy=no-user-gesture-required')
     options.add_argument('--disable-extensions')
     options.add_argument('--mute-audio')
+
     driver = uc.Chrome(
         options=options,
         user_data_dir=PATH_PROFILES.joinpath(profile).absolute(),
         headless=is_headless,
         log_level=3 if is_debug() else 0,
     )
-    driver.set_window_size(1200, 800)
 
+    driver.set_window_size(1200, 800)
     setattr(driver, '__profile_name', profile)
 
     return driver
@@ -70,8 +71,9 @@ def start_chrome(profiles: list[str], is_headless: bool, check_owl: bool, check_
     global DRIVERS
 
     info(f'&yBooting {len(profiles)} {"headless " if is_headless else ""}Chrome driver(s)...')
-    info('&yFollow all instructions you see here and &rDO NOT &ypress or '
-         'do anything until asked, it may break the bot.')
+    if not is_headless:
+        info('&yFollow all instructions you see here and &rDO NOT &ypress or '
+             'do anything until asked, it may break the bot.')
 
     drivers = [get_driver(profile, is_headless) for profile in profiles]
     DRIVERS = drivers
