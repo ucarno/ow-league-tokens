@@ -7,6 +7,7 @@ To earn Contenders skins in the same automated fashion, try [this](https://githu
 <div align="center">
 
 [![Support my work](https://i.imgur.com/NOoWZ8G.png)](https://ko-fi.com/ucarno)
+[![Join Discord](https://i.imgur.com/dUQDNfo.png)](https://discord.gg/kkq2XY4cJM)
 
 </div>
 
@@ -18,6 +19,8 @@ To earn Contenders skins in the same automated fashion, try [this](https://githu
 
 ## Planned Features
 * Automatically set broadcast quality to 144p, so it doesn't consume a lot of bandwidth
+* Support other Chromium-based browsers
+* Mobile phones support (not guaranteed)
 
 ## Installation
 ### Windows
