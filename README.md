@@ -12,7 +12,7 @@ To earn Contenders skins in the same automated fashion, try [this](https://githu
 
 ## Features
 * Automatic live broadcast detection — don't worry about "when" and "where"
-* Multiple accounts support - you just need multiple Google accounts
+* Multiple accounts support — you just need multiple Google accounts
 * Headless mode — see only a console window (as before) if an extra Chrome window is bothering you
 * No sound — Chrome will be muted entirely
 
@@ -65,7 +65,8 @@ Bot can be updated without losing your profile(s) data (no need to login into Go
 * Use `--nomenu` (or `Start_Without_Menu.bat` on Windows) to run the app without a menu using your `config.json` file.
 
 ## Possible Issues
-If you encounter any problems, **make sure your Chrome is the latest version**!
+If you encounter any problems, **make sure your Chrome is the latest version** —
+you can force Chrome update here: `chrome://settings/help`!
 
 ### Stream window is randomly unloading
 This may happen, for example, in non-headless mode when you collapse a Chrome window.
@@ -93,6 +94,14 @@ Feel free to contribute by
 [making a pull request](https://github.com/ucarno/ow-league-tokens/pulls) or
 [buying me a coffee](https://ko-fi.com/ucarno).
 Thanks to everyone for using this bot, contributing and/or leaving feedback!
+
+## Update History
+### v2.0.1
+* Improved menu experience
+* Minor fixes
+
+### v2.0.0 — The "YouTube" Update
+* Bot now works through YouTube
 
 ## Disclaimer
 This app is not affiliated with Blizzard Entertainment, Inc. All trademarks are the properties of their respective owners.
