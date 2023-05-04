@@ -40,8 +40,8 @@ do everything on another machine with GUI and copy `profiles/` directory to your
 This bot uses [Chrome Driver](https://github.com/ultrafunkamsterdam/undetected-chromedriver)
 under the hood that requires Google Chrome to be installed.
 
-Make sure you have Google Chrome installed, and it is at least version 112;
-you can check your Chrome version here: `chrome://version/`
+Make sure you have Google Chrome installed, and it is latest version;
+you can check your Chrome version here: `chrome://version/`; and force Chrome update here: `chrome://settings/help`
 
 Also make sure you have connected Battle.net account(s) to Google account(s)
 on [this](https://www.youtube.com/account_sharing) page!
