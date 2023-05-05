@@ -30,7 +30,7 @@ To use another browser than Google Chrome,
 set `chromium_binary` field in `config.json` to your browser's executable path.
 
 Firefox is not supported
-(support can be technically implemented, but then Google will be able to detect that browser is automated).
+(support can be technically implemented, but then Google will be able to detect automation).
 
 ## Installation
 ### Windows
@@ -103,10 +103,16 @@ Feel free to contribute by
 Thanks to everyone for using this bot, contributing and/or leaving feedback!
 
 ## Update History
+### v2.0.3
+* _(Probably)_ Fixed a crash when trying to run multiple headless profiles
+* Fixed an issue when app would not start if there are headless Chrome windows left from previous run (Windows only)
+* Now showing better error when browser executable can't be found
+([related](https://github.com/ultrafunkamsterdam/undetected-chromedriver/issues/497))
+
 ### v2.0.2
 * App now waits for `Enter` key press after exception (can be disabled via `--nowait` argument)
 * Fixed issue with app crashing when Chrome is not the last version
-* Stream will now be reloaded every 15 minutes in case it crashes
+* Stream will now be refreshed every 15 minutes in case it crashes
 * Added experimental support of other Chromium-based browsers (via `chromium_binary` field in `config.json`)
 * Chromium flags can be now modified using `chromium_flags` field in `config.json`
 

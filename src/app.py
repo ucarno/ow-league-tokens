@@ -14,7 +14,7 @@ from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, Y
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
     DISCORD_URL, ISSUES_URL
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
-    make_debug_file, get_console_message, set_nowait, wait_before_finish
+    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -51,7 +51,7 @@ def get_driver(profile: str, config: dict) -> uc.Chrome:
         'user_data_dir': PATH_PROFILES.joinpath(profile).absolute(),
         'headless': config['headless'],
         'log_level': 1 if is_debug() else 0,
-        'version_main': CURRENT_VERSION_MAIN
+        'version_main': CURRENT_VERSION_MAIN,
     }
 
     try:
@@ -60,16 +60,37 @@ def get_driver(profile: str, config: dict) -> uc.Chrome:
     except WebDriverException as e:
         message = e.msg
         src = 'Driver'
-        if 'This version of ChromeDriver only supports Chrome version' in message:
-            log_info(src, f'ChromeDriver version differs from installed Chrome version. Trying to fix that!')
 
-            try:
-                CURRENT_VERSION_MAIN = int(message.split('Current browser version is ')[1].rstrip().split('.')[0])
-            except Exception as e:
-                log_error(src, f'Could not get correct Chrome version: {str(e)}')
-                make_debug_file('driver-version', message, True)
-                wait_before_finish()
-                raise e
+        check_version, check_different_browser = [
+            'This version of ChromeDriver only supports Chrome version' in message,
+            'unrecognized Chrome version' in message,
+        ]
+        if check_version or check_different_browser:
+            if check_version:
+                log_info(src, f'ChromeDriver version differs from installed Chrome version. Trying to fix that!')
+
+                try:
+                    CURRENT_VERSION_MAIN = int(message.split('Current browser version is ')[1].rstrip().split('.')[0])
+                except Exception as e:
+                    log_error(src, f'Could not fix that, can\'t get correct Chrome version: {str(e)}')
+                    make_debug_file('driver-version', message, True)
+                    wait_before_finish()
+                    raise e
+            else:
+                log_info(src, 'Unrecognized Chrome version. Are you using different browser? Trying to fix that!')
+
+                try:
+                    browser_info = message.split('unrecognized Chrome version: ')[1]
+                    browser, version = browser_info.split('/')
+                    version_main = int(version.split('.')[0])
+                    CURRENT_VERSION_MAIN = version_main
+
+                    # todo: if edge, use EdgeDriver instead
+                except Exception as e:
+                    log_error(src, f'Could not fix that, can\'t get correct Chrome version: {str(e)}')
+                    make_debug_file('driver-version-other-browser', message, True)
+                    wait_before_finish()
+                    raise e
 
             log_info(src, f'&gSuccessfully got correct Chrome version ({CURRENT_VERSION_MAIN})!')
             log_info(src, 'Trying to boot ChromeDriver with correct version instead...')
@@ -78,8 +99,16 @@ def get_driver(profile: str, config: dict) -> uc.Chrome:
             kwargs['options'] = get_chrome_options(config)  # options can't be reused
 
             driver = uc.Chrome(**kwargs)
+
         else:
             raise e
+    except TypeError as e:
+        if 'expected str, bytes or os.PathLike object, not NoneType' in str(e):
+            error('Can\'t find browser executable location. &ySpecify it in config.json (field "chromium_binary") '
+                  'https://discord.com/channels/1103710176189628429/1103734357031653376/1104075303871062158')
+            wait_before_finish()
+            exit(1)
+        raise e
 
     driver.set_window_size(1200, 800)
     setattr(driver, '__profile_name', profile)
@@ -107,14 +136,21 @@ def watch_broadcast(driver: uc.Chrome, url: str):
 
 
 def start_chrome(config: dict):
-    global DRIVERS
+    global DRIVERS, CURRENT_VERSION_MAIN
 
     info(f'&yBooting {len(config["profiles"])} {"headless " if config["headless"] else ""}Chrome driver(s)...')
     if not config['headless']:
         info('&yFollow all instructions you see here and &rDO NOT &ypress or '
              'do anything until asked, it may break the bot.')
 
-    drivers = [get_driver(profile, config) for profile in config['profiles']]
+    kill_headless_chromes()
+
+    drivers = []
+    for index, profile in enumerate(config['profiles']):
+        drivers.append(get_driver(profile, config))
+        if index == 0:
+            CURRENT_VERSION_MAIN = drivers[0].patcher.version_main
+
     DRIVERS = drivers
 
     for index, driver in enumerate(drivers):
@@ -144,7 +180,9 @@ def start_chrome(config: dict):
                 driver_info(driver, '&rAuthentication check failed. '
                                     '&mPlease log in to your Google account. If you don\'t see Google\'s login screen, '
                                     'then go to https://gmail.com/ and log in there and then go to '
-                                    'https://youtube.com/. You have 5000 seconds for this.')
+                                    'https://youtube.com/. You have 5000 seconds for this.\n'
+                                    '&rIf you still can\'t log in, then sync your Google Chrome profile '
+                                    'using profile button located in upper right corner of a browser.')
 
                 WebDriverWait(driver, 5000).until(EC.url_matches(YOUTUBE_AUTH_PASS_RE))
                 driver.get(NEW_TAB_URL)
@@ -272,6 +310,13 @@ def bootstrap(config: dict, nowait: bool = False):
         start_chrome(config)
     except Exception as e:
         content = str(e) + '\n\n' + traceback.format_exc()
+
+        if 'no such window: target window already closed' in content:
+            log_error('Bot', 'You closed Chrome window, app can\'t work without it. '
+                             'If you don\'t want to see it, then &yenable headless mode&r in menu.')
+            wait_before_finish()
+            exit(1)
+
         path = make_debug_file('unexpected-error', content, True)
 
         print(content)

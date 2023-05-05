@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import subprocess
+import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -64,6 +66,26 @@ def save_config(new_config: dict):
     with open(PATH_CONFIG, 'w+', encoding='utf-8') as f:
         f.write(json.dumps(new_config, indent=4))
         f.close()
+
+
+def run_powershell(command):
+    subprocess.Popen(['powershell.exe', command], stdout=sys.stdout)
+
+
+def kill_headless_chromes():
+    src = 'Ghostbuster'
+
+    # linux: pkill -f "(chrome).*(--headless)"
+
+    # https://superuser.com/questions/1288388/how-can-i-kill-all-headless-chrome-instances-from-the-command-line-on-windows
+    if sys.platform.startswith('win32'):
+        log_debug(src, 'Killing stuck Chrome processes just in case')
+        try:
+            run_powershell('Get-CimInstance Win32_Process -Filter '
+                           '"Name = \'chrome.exe\' AND CommandLine LIKE \'%--headless%\'" | '
+                           '%{Stop-Process $_.ProcessId}')
+        except Exception as e:
+            log_debug(src, f'Failed killing Chrome process(es): {str(e)}')
 
 
 def get_active_stream(channel_id: str) -> str | None:
