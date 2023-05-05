@@ -1,5 +1,6 @@
 import atexit
 import logging
+import traceback
 from random import randint
 from time import sleep, time
 
@@ -10,9 +11,10 @@ from selenium.webdriver.support.wait import WebDriverWait
 import undetected_chromedriver as uc
 
 from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, YOUTUBE_AUTH_ANY_RE, \
-    OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL
-from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug
-
+    OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
+    DISCORD_URL, ISSUES_URL
+from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
+    make_debug_file, get_console_message, set_nowait, wait_before_finish
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -23,24 +25,61 @@ driver_info = lambda _driver, msg: log_info(f'Chrome - \'{get_driver_profile(_dr
 driver_debug = lambda _driver, msg: log_debug(f'Chrome - \'{get_driver_profile(_driver)}\'', msg)
 
 DRIVERS: list[uc.Chrome] = []
+CURRENT_VERSION_MAIN = None
 
 
 def get_driver_profile(driver: uc.Chrome) -> str:
     return getattr(driver, '__profile_name')
 
 
-def get_driver(profile: str, is_headless: bool) -> uc.Chrome:
+def get_chrome_options(config: dict) -> uc.ChromeOptions:
     options = uc.ChromeOptions()
-    options.add_argument('--autoplay-policy=no-user-gesture-required')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--mute-audio')
+    for argument in config['chromium_flags']:
+        options.add_argument(argument)
 
-    driver = uc.Chrome(
-        options=options,
-        user_data_dir=PATH_PROFILES.joinpath(profile).absolute(),
-        headless=is_headless,
-        log_level=3 if is_debug() else 0,
-    )
+    if config['chromium_binary']:
+        options.binary_location = config['chromium_binary']
+
+    return options
+
+
+def get_driver(profile: str, config: dict) -> uc.Chrome:
+    global CURRENT_VERSION_MAIN
+
+    kwargs = {
+        'options': get_chrome_options(config),
+        'user_data_dir': PATH_PROFILES.joinpath(profile).absolute(),
+        'headless': config['headless'],
+        'log_level': 1 if is_debug() else 0,
+        'version_main': CURRENT_VERSION_MAIN
+    }
+
+    try:
+        # try to create a driver with the latest ChromeDriver version
+        driver = uc.Chrome(**kwargs)
+    except WebDriverException as e:
+        message = e.msg
+        src = 'Driver'
+        if 'This version of ChromeDriver only supports Chrome version' in message:
+            log_info(src, f'ChromeDriver version differs from installed Chrome version. Trying to fix that!')
+
+            try:
+                CURRENT_VERSION_MAIN = int(message.split('Current browser version is ')[1].rstrip().split('.')[0])
+            except Exception as e:
+                log_error(src, f'Could not get correct Chrome version: {str(e)}')
+                make_debug_file('driver-version', message, True)
+                wait_before_finish()
+                raise e
+
+            log_info(src, f'&gSuccessfully got correct Chrome version ({CURRENT_VERSION_MAIN})!')
+            log_info(src, 'Trying to boot ChromeDriver with correct version instead...')
+
+            kwargs['version_main'] = CURRENT_VERSION_MAIN
+            kwargs['options'] = get_chrome_options(config)  # options can't be reused
+
+            driver = uc.Chrome(**kwargs)
+        else:
+            raise e
 
     driver.set_window_size(1200, 800)
     setattr(driver, '__profile_name', profile)
@@ -49,7 +88,7 @@ def get_driver(profile: str, is_headless: bool) -> uc.Chrome:
 
 
 def watch_broadcast(driver: uc.Chrome, url: str):
-    driver_debug(driver, 'Driver is going to stream at ' + url + '...')
+    driver_info(driver, 'Driver is going to stream at ' + url + '...')
     driver.get(url)
     # todo: find a way to change quality without relying on English labels
     # driver.implicitly_wait(3)
@@ -67,15 +106,15 @@ def watch_broadcast(driver: uc.Chrome, url: str):
     # quality.click()
 
 
-def start_chrome(profiles: list[str], is_headless: bool, check_owl: bool, check_owc: bool):
+def start_chrome(config: dict):
     global DRIVERS
 
-    info(f'&yBooting {len(profiles)} {"headless " if is_headless else ""}Chrome driver(s)...')
-    if not is_headless:
+    info(f'&yBooting {len(config["profiles"])} {"headless " if config["headless"] else ""}Chrome driver(s)...')
+    if not config['headless']:
         info('&yFollow all instructions you see here and &rDO NOT &ypress or '
              'do anything until asked, it may break the bot.')
 
-    drivers = [get_driver(profile, is_headless) for profile in profiles]
+    drivers = [get_driver(profile, config) for profile in config['profiles']]
     DRIVERS = drivers
 
     for index, driver in enumerate(drivers):
@@ -91,13 +130,14 @@ def start_chrome(profiles: list[str], is_headless: bool, check_owl: bool, check_
             driver.quit()
 
         if driver.current_url.startswith(YOUTUBE_AUTH_FAIL):
-            if is_headless:
+            if config['headless']:
                 driver_error(driver, '&rAuthentication check failed. '
                                      '&mPlease run this app as &rNOT headless&m and log in to your Google account.')
 
                 for _driver in drivers:
                     _driver.quit()
 
+                wait_before_finish()
                 exit()
 
             else:
@@ -120,10 +160,11 @@ def start_chrome(profiles: list[str], is_headless: bool, check_owl: bool, check_
                      'authentication so Google doesn\'t complain about suspicious activity.')
                 sleep(delay)
 
-    info('Started looking for live stream...')
+    info('Setting stream status as &rOffline&y by default. Started looking for live stream...')
 
     live_url = None
     live_src = None
+    checks_until_reload = 3
 
     while True:
         skip_owc_check = False
@@ -131,42 +172,60 @@ def start_chrome(profiles: list[str], is_headless: bool, check_owl: bool, check_
         current_url = None
         current_src = None
 
-        debug('Checking for stream status...')
+        info('Checking for stream status...')
 
-        if check_owl:
+        if config['enable_owl']:
             url = get_active_stream(OWL_CHANNEL_ID)
             if url:
-                debug('OWL stream is online!')
+                debug('&gOWL stream is online!')
                 current_url, current_src = url, 'OWL'
                 skip_owc_check = True
 
-        if check_owc and not skip_owc_check:
+        if config['enable_owc'] and not skip_owc_check:
             url = get_active_stream(OWC_CHANNEL_ID)
             if url:
-                debug('OWC stream is online!')
+                debug('&gOWC stream is online!')
                 current_url, current_src = url, 'OWC'
 
         if current_url != live_url:
+            checks_until_reload = 3
             if current_url:
                 if live_url:
                     info('Stream URL has changed?')
                 else:
-                    info('Stream has just started!')
+                    info('&gStream has just started!')
 
                 for index, driver in enumerate(drivers):
                     watch_broadcast(driver, current_url)
                     if index != (len(drivers) - 1):
                         delay = randint(5, 15)
-                        debug(f'Looks like there are more drivers. Adding random {delay} seconds delay before going to '
-                              f'live stream so Google doesn\'t complain about suspicious activity.')
+                        info(f'Looks like there are more drivers. Adding random {delay} seconds delay before going to '
+                             f'live stream so Google doesn\'t complain about suspicious activity.')
                         sleep(delay)
             else:
-                info('Stream has just ended :(')
+                info('&rStream has just ended :(')
                 for driver in drivers:
                     driver.get(NEW_TAB_URL)
         else:
             # nothing changed!
-            pass
+            if current_url:
+                info('Nothing changed, stream still &gOnline&y!')
+
+                checks_until_reload -= 1
+
+                if checks_until_reload == 0:
+                    info('Time for drivers to refresh streams...')
+                    for index, driver in enumerate(drivers):
+                        driver_info(driver, 'Driver is refreshing stream page...')
+                        driver.refresh()
+                        if index != (len(drivers) - 1):
+                            delay = randint(5, 15)
+                            info(f'Looks like there are more drivers. Adding random {delay} seconds '
+                                 f'delay before refreshing live stream.')
+                            sleep(delay)
+                    checks_until_reload = 3
+            else:
+                info('Nothing changed, stream still &rOffline&y!')
 
         live_url, live_src = current_url, current_src
         sleep(STREAM_CHECK_FREQUENCY)
@@ -181,13 +240,18 @@ def cleanup():
     print('Bye!')
 
 
-def bootstrap(config: dict):
+def bootstrap(config: dict, nowait: bool = False):
+    print(get_console_message(
+        f'&mJoin our Discord for help, updates, suggestions, instructions and more: &g{DISCORD_URL}'
+    ))
+
     logging.basicConfig(
         level=logging.DEBUG if config['debug'] else logging.INFO,
         format='[%(asctime)s - %(levelname)s] %(message)s'
     )
 
     set_debug(config['debug'])
+    set_nowait(nowait)
 
     check_for_new_version()
 
@@ -195,16 +259,27 @@ def bootstrap(config: dict):
 
     if len(config['profiles']) == 0:
         log_error(src, 'No profiles specified!')
-        exit()
+        wait_before_finish()
+        exit(1)
     elif not any((config['enable_owl'], config['enable_owc'])):
         log_error(src, 'Enable either OWL, OWC or both!')
-        exit()
+        wait_before_finish()
+        exit(1)
 
     atexit.register(cleanup)
 
-    start_chrome(
-        profiles=config['profiles'],
-        is_headless=config['headless'],
-        check_owl=config['enable_owl'],
-        check_owc=config['enable_owc']
-    )
+    try:
+        start_chrome(config)
+    except Exception as e:
+        content = str(e) + '\n\n' + traceback.format_exc()
+        path = make_debug_file('unexpected-error', content, True)
+
+        print(content)
+
+        log_error('Oops', f'\n\nSomething unexpected happened! '
+                          f'Share your issue in Discord: {DISCORD_URL} '
+                          f'or open a GitHub issue: {ISSUES_URL}\n\n'
+                          f'Also, please include this file: {str(path.absolute())}')
+
+        wait_before_finish()
+        exit(1)

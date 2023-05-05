@@ -19,8 +19,18 @@ To earn Contenders skins in the same automated fashion, try [this](https://githu
 
 ## Planned Features
 * Automatically set broadcast quality to 144p, so it doesn't consume a lot of bandwidth
-* Support other Chromium-based browsers
-* Mobile phones support (not guaranteed)
+* Mobile phones support
+
+## You need a browser for app to work!
+This bot uses [undetected-chromedriver](https://github.com/ultrafunkamsterdam/undetected-chromedriver)
+under the hood that requires any Chromium-based browser to be installed.
+
+Tested with Google Chrome and app uses it by default — other browser support is experimental.
+To use another browser than Google Chrome,
+set `chromium_binary` field in `config.json` to your browser's executable path.
+
+Firefox is not supported
+(support can be technically implemented, but then Google will be able to detect that browser is automated).
 
 ## Installation
 ### Windows
@@ -32,7 +42,7 @@ To earn Contenders skins in the same automated fashion, try [this](https://githu
 ### Linux
 You need to have GUI to log into your Google account(s). If you don't have GUI and can't install/use it, then
 do everything on another machine with GUI and copy `profiles/` directory to your Linux installation.
-1. Install Python 3.10+ or make sure your Python version is at least 3.10 (`python --version`)
+1. Make sure your Python version is at least 3.10 (`python --version`) or install Python v3.11.3
 2. Clone this repository using `git clone https://github.com/ucarno/ow-league-tokens`
 3. Go to app's directory using `cd ow-league-tokens`
 4. Install dependencies via `pip3 install -r requirements.txt`
@@ -40,13 +50,7 @@ do everything on another machine with GUI and copy `profiles/` directory to your
 6. Add the required number of profiles using a menu (single profile for single Battle.net/Google account).
 
 ## Usage
-This bot uses [Chrome Driver](https://github.com/ultrafunkamsterdam/undetected-chromedriver)
-under the hood that requires Google Chrome to be installed.
-
-Make sure you have Google Chrome installed, and it is latest version;
-you can check your Chrome version here: `chrome://version/`; and force Chrome update here: `chrome://settings/help`
-
-Also make sure you have connected Battle.net account(s) to Google account(s)
+Make sure you have connected Battle.net account(s) to Google account(s)
 on [this](https://www.youtube.com/account_sharing) page!
 
 1. Start the bot using a first menu option.
@@ -66,10 +70,10 @@ Bot can be updated without losing your profile(s) data (no need to login into Go
 
 ## Command-line Arguments
 * Use `--nomenu` (or `Start_Without_Menu.bat` on Windows) to run the app without a menu using your `config.json` file.
+* Use `--nowait` for a script to close immediately after an error
+(without `--nowait` you have to manually press Enter for script to close after an error) 
 
 ## Possible Issues
-If you encounter any problems, **make sure your Chrome is the latest version** —
-you can force Chrome update here: `chrome://settings/help`!
 
 ### Stream window is randomly unloading
 This may happen, for example, in non-headless mode when you collapse a Chrome window.
@@ -99,6 +103,13 @@ Feel free to contribute by
 Thanks to everyone for using this bot, contributing and/or leaving feedback!
 
 ## Update History
+### v2.0.2
+* App now waits for `Enter` key press after exception (can be disabled via `--nowait` argument)
+* Fixed issue with app crashing when Chrome is not the last version
+* Stream will now be reloaded every 15 minutes in case it crashes
+* Added experimental support of other Chromium-based browsers (via `chromium_binary` field in `config.json`)
+* Chromium flags can be now modified using `chromium_flags` field in `config.json`
+
 ### v2.0.1
 * Improved menu experience
 * Minor fixes

@@ -8,7 +8,29 @@ from pathlib import Path
 import requests
 
 from constants import TMPL_LIVE_STREAM_EMBED_URL, COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, \
-    CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL
+    CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, \
+    DEFAULT_CHROMIUM_FLAGS
+
+
+def get_version(version: str) -> tuple:
+    return tuple(map(int, (version.split("."))))
+
+
+def wait_before_finish():
+    if not is_nowait():
+        input('\n\nPress Enter to close...\n')
+
+
+def get_default_config() -> dict:
+    return {
+        'profiles': ['default'],
+        'enable_owl': True,
+        'enable_owc': False,
+        'headless': False,
+        'debug': False,
+        'chromium_binary': None,
+        'chromium_flags': DEFAULT_CHROMIUM_FLAGS,
+    }
 
 
 def load_config() -> dict:
@@ -16,15 +38,26 @@ def load_config() -> dict:
         with open(PATH_CONFIG, 'r', encoding='utf-8') as f:
             content = f.read()
             f.close()
-        return json.loads(content)
+
+        content = json.loads(content)
+        update_config = False
+
+        # v2.0.2
+        if 'chromium_binary' not in content:
+            update_config = True
+            content['chromium_binary'] = None
+        if 'chromium_flags' not in content:
+            update_config = True
+            content['chromium_flags'] = DEFAULT_CHROMIUM_FLAGS
+
+        if update_config:
+            save_config(content)
+
+        return content
     else:
-        return {
-            'profiles': ['default'],
-            'enable_owl': True,
-            'enable_owc': False,
-            'headless': False,
-            'debug': False,
-        }
+        content = get_default_config()
+        save_config(content)
+        return content
 
 
 def save_config(new_config: dict):
@@ -35,7 +68,6 @@ def save_config(new_config: dict):
 
 def get_active_stream(channel_id: str) -> str | None:
     """Returns stream url if channel with specified channel_id has active stream"""
-    debug = is_debug()
     src = 'LiveCheck'
 
     try:
@@ -91,13 +123,11 @@ def check_for_new_version():
         make_debug_file('versioncheck', traceback.format_exc())
         return
 
-    if response.status_code == 200 and latest_version != CURRENT_VERSION:
+    if response.status_code == 200 and get_version(latest_version) > get_version(CURRENT_VERSION):
         log_info(log_src, f'&gNew version available! You are on version &r{CURRENT_VERSION}&g, '
                           f'but version &m{latest_version}&g is available! Download here: &m{UPDATE_DOWNLOAD_URL}')
-        os.environ.setdefault(VERSION_ENVIRON, 'true')
     else:
         log_info(log_src, 'No new version available!')
-        os.environ.setdefault(VERSION_ENVIRON, 'false')
 
 
 def is_debug() -> bool:
@@ -108,12 +138,20 @@ def set_debug(value: bool):
     os.environ.setdefault(DEBUG_ENVIRON, 'true' if value else 'false')
 
 
-def make_debug_file(name: str, content: str) -> Path | None:
-    if is_debug():
+def is_nowait() -> bool:
+    return os.environ.get(NOWAIT_ENVIRON, 'false') == 'true'
+
+
+def set_nowait(value: bool):
+    os.environ.setdefault(NOWAIT_ENVIRON, 'true' if value else 'false')
+
+
+def make_debug_file(name: str, content: str, force: bool = False) -> Path | None:
+    if is_debug() or force:
         dt = datetime.now().replace(microsecond=0).isoformat().replace(':', '-')
         filename = f'{name}_{dt}.txt'
         path = PATH_DEBUG.joinpath(filename)
-        log_debug('SavingDebugFile', f'Saving debug file to "{path.absolute()}" ...')
+        log_info('SavingDebugFile', f'Saving debug file to "{path.absolute()}" ...')
         with open(path, 'w+', encoding='utf-8') as f:
             f.write(content)
             f.close()

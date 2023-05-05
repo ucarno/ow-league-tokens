@@ -16,7 +16,7 @@ def add_profile(config):
 
     allowed_characters = set(list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'))
     allowed_chars_repr = '&gA-Z&r, &ga-z&r, &g0-9&r, &g-&r, &g_&r'
-    P('One account - one (Gmail) profile. '
+    P('One account - one profile. Enter whatever you want — profile name is only for convenience.\n'
       'I recommend adding one account at a time so you know what account you log into.')
     while True:
         P(f'Enter profile name (allowed characters: {allowed_chars_repr.replace("&r", "&y")}) or leave blank to exit:')
@@ -98,12 +98,13 @@ def switch_setting(config, setting):
 
 def menu():
     config = load_config()
+    first_run = True
 
     while True:
         options = [
             (
                 f'Start app!',
-                lambda c: bootstrap(c)
+                lambda c: (cls(), bootstrap(c))
             ),
             (
                 f'Add profile &g[+]',
@@ -131,12 +132,16 @@ def menu():
             )
         ]
 
-        cls()
+        if first_run:
+            first_run = False
+        else:
+            cls()
+
         P('&cSelect an option:')
         for index, (option_name, _) in enumerate(options):
             P(f'    &c{index + 1}. &y{option_name}')
 
-        option = input(' >> ')
+        option = get_input()
 
         if not option or not option.isdigit() or not 0 < int(option) <= len(options):
             P('&rInvalid option!')

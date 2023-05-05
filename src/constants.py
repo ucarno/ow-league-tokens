@@ -2,10 +2,14 @@ from pathlib import Path
 
 from colorama import Fore
 
-CURRENT_VERSION = '2.0.1'
+
+CURRENT_VERSION = '2.0.2'
 UPDATE_DOWNLOAD_URL = 'https://github.com/ucarno/ow-league-tokens/releases/latest'
+DISCORD_URL = 'https://discord.gg/kkq2XY4cJM'
+ISSUES_URL = 'https://github.com/ucarno/ow-league-tokens/issues'
 
 DEBUG_ENVIRON = 'OW_LEAGUE_TOKENS_DEBUG'
+NOWAIT_ENVIRON = 'OW_LEAGUE_TOKENS_NOWAIT'
 
 PATH_ROOT = Path(__file__).parent
 PATH_PROFILES = PATH_ROOT.joinpath('profiles')
@@ -35,6 +39,12 @@ YOUTUBE_AUTH_PASS_RE = '^' + YOUTUBE_AUTH_PASS_RE
 
 NEW_TAB_URL = 'chrome://new-tab-page/'
 STREAM_CHECK_FREQUENCY = 300  # seconds
+
+DEFAULT_CHROMIUM_FLAGS = [
+    '--autoplay-policy=no-user-gesture-required',
+    '--disable-extensions',
+    '--mute-audio',
+]
 
 COLORS = (
     ('&g', Fore.GREEN),

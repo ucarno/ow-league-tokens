@@ -5,10 +5,9 @@ import sys
 from colorama import init
 
 from app import bootstrap
-from constants import PATH_PROFILES, PATH_DEBUG, PATH_ROOT
+from constants import PATH_PROFILES, PATH_DEBUG, PATH_ROOT, DISCORD_URL
 from menu import menu
-from utils import load_config
-
+from utils import load_config, get_console_message
 
 if __name__ == '__main__':
     # fix requests module not able to find certs in lib folder
@@ -18,6 +17,9 @@ if __name__ == '__main__':
         )
 
     init()
+    print(get_console_message(
+        f'&mJoin our Discord for help, updates, suggestions, instructions and more: &g{DISCORD_URL}'
+    ))
 
     for path in (PATH_PROFILES, PATH_DEBUG):
         path.mkdir(parents=True, exist_ok=True)
@@ -28,11 +30,16 @@ if __name__ == '__main__':
         help='Run app without menu using config',
         action='store_true',
     )
+    parser.add_argument(
+        '--nowait',
+        help='App will not wait for Enter key press on error',
+        action='store_true'
+    )
 
     args = parser.parse_args()
 
     if args.nomenu:
         config = load_config()
-        bootstrap(config)
+        bootstrap(config, args.nowait)
     else:
         menu()
