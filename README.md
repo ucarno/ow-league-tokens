@@ -75,10 +75,6 @@ Bot can be updated without losing your profile(s) data (no need to login into Go
 
 ## Possible Issues
 
-### Stream window is randomly unloading
-This may happen, for example, in non-headless mode when you collapse a Chrome window.
-It will be fixed in later release.
-
 ### Google profile is not restored after logging into account and re-opening the bot
 If this happens to you, then after logging into Google account, don't instantly close and re-open the bot.
 Let Chrome be open for a few minutes, may be try browsing your gmail or open a YouTube video.
