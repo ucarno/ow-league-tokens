@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  ow-league-tokens:
+    volumes: ['./src/profiles:/app/profiles']
+    build: .
+    entrypoint: ['python', 'main.py', '--nomenu', '--nowait', '--profiles', 'default']
+    restart: unless-stopped

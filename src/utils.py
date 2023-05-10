@@ -72,24 +72,28 @@ def run_powershell(command):
     subprocess.Popen(['powershell.exe', command], stdout=sys.stdout)
 
 
-def kill_headless_chromes():
+def kill_headless_chromes(binary_path: str | None = None):
     src = 'Ghostbuster'
 
     # linux: pkill -f "(chrome).*(--headless)"
 
     # https://superuser.com/questions/1288388/how-can-i-kill-all-headless-chrome-instances-from-the-command-line-on-windows
     if sys.platform.startswith('win32'):
-        log_debug(src, 'Killing stuck Chrome processes just in case')
+        process_name = 'chrome.exe'
+        if binary_path:
+            process_name = binary_path.split('\\')[-1].split('/')[-1]
+
+        log_debug(src, f'Killing stuck \'{process_name}\' processes just in case')
         try:
-            run_powershell('Get-CimInstance Win32_Process -Filter '
-                           '"Name = \'chrome.exe\' AND CommandLine LIKE \'%--headless%\'" | '
+            run_powershell(f'Get-CimInstance Win32_Process -Filter '
+                           f'"Name = \'{process_name}\' AND CommandLine LIKE \'%--headless%\'" | '
                            '%{Stop-Process $_.ProcessId}')
         except Exception as e:
             log_debug(src, f'Failed killing Chrome process(es): {str(e)}')
 
 
 def get_active_stream(channel_id: str) -> str | None:
-    """Returns stream url if channel with specified channel_id has active stream"""
+    """Returns stream url if a channel with specified channel_id has active stream"""
     src = 'LiveCheck'
 
     try:
@@ -140,7 +144,7 @@ def check_for_new_version():
     try:
         response = requests.get(VERSION_CHECK_URL, timeout=3)
         latest_version = response.text.strip()
-    except requests.RequestException as e:
+    except Exception as e:
         log_error(log_src, f'&rFailed to check for new version: {str(e)}.')
         make_debug_file('versioncheck', traceback.format_exc())
         return

@@ -1,4 +1,5 @@
-cd ..
+# NB! YOU CAN BUILD FOR WINDOWS **ONLY** UNDER WINDOWS
+
 source venv/Scripts/activate
 
 mkdir -p dist
@@ -18,7 +19,7 @@ cd ow-league-tokens
 mv lib/ow-league-tokens.exe .
 mv lib/python311.dll .
 mv lib/base_library.zip .
-echo "ow-league-tokens.exe --nomenu && pause" > Start_Without_Menu.bat
+echo "ow-league-tokens.exe --nomenu" > Start_Without_Menu.bat
 
 cd ..
-powershell Compress-Archive ow-league-tokens ow-league-tokens.zip
+powershell Compress-Archive ow-league-tokens ow-league-tokens_Windows.zip

@@ -75,30 +75,50 @@ def get_driver(profile: str, config: dict) -> uc.Chrome:
                     log_error(src, f'Could not fix that, can\'t get correct Chrome version: {str(e)}')
                     make_debug_file('driver-version', message, True)
                     wait_before_finish()
-                    raise e
+                    exit(1)
             else:
                 log_info(src, 'Unrecognized Chrome version. Are you using different browser? Trying to fix that!')
 
                 try:
-                    browser_info = message.split('unrecognized Chrome version: ')[1]
-                    browser, version = browser_info.split('/')
-                    version_main = int(version.split('.')[0])
-                    CURRENT_VERSION_MAIN = version_main
+                    if 'unrecognized Chrome version: 1.0.0' in message:
+                        browser, version = 'Opera', None
+                        CURRENT_VERSION_MAIN = None
+                        log_error('Opera is not supported, install either Google Chrome or Brave.')
+                        wait_before_finish()
+                        exit(1)
+                    else:
+                        browser_info = message.split('unrecognized Chrome version: ')[1]
+                        browser, version = browser_info.split('/')
+                        version_main = int(version.split('.')[0])
+                        CURRENT_VERSION_MAIN = version_main
 
-                    # todo: if edge, use EdgeDriver instead
+                    if browser == 'Edg':
+                        log_error('MS Edge is not supported, install either Google Chrome or Brave.')
+                        wait_before_finish()
+                        exit(1)
+                        # https://msedgewebdriverstorage.z22.web.core.windows.net/
+                        # todo: if edge, use EdgeDriver instead
                 except Exception as e:
                     log_error(src, f'Could not fix that, can\'t get correct Chrome version: {str(e)}')
                     make_debug_file('driver-version-other-browser', message, True)
                     wait_before_finish()
-                    raise e
+                    exit(1)
 
-            log_info(src, f'&gSuccessfully got correct Chrome version ({CURRENT_VERSION_MAIN})!')
+            log_info(src, f'&gSuccessfully got correct Chromium version ({CURRENT_VERSION_MAIN}) '
+                          f'and browser ({browser})!')
             log_info(src, 'Trying to boot ChromeDriver with correct version instead...')
 
             kwargs['version_main'] = CURRENT_VERSION_MAIN
             kwargs['options'] = get_chrome_options(config)  # options can't be reused
 
-            driver = uc.Chrome(**kwargs)
+            try:
+                driver = uc.Chrome(**kwargs)
+            except Exception as e:
+                tb = traceback.format_exc()
+                log_error(src, tb)
+                print('\n')
+                log_error('Could not boot your browser.')
+                exit(1)
 
         else:
             raise e
@@ -270,12 +290,13 @@ def start_chrome(config: dict):
 
 
 def cleanup():
-    for driver in DRIVERS:
-        try:
-            driver.quit()
-        except:
-            pass
-    print('Bye!')
+    if DRIVERS:
+        log_info('Cleanup', 'Cleaning up...')
+        for driver in DRIVERS:
+            try:
+                driver.quit()
+            except:
+                pass
 
 
 def bootstrap(config: dict, nowait: bool = False):
@@ -305,26 +326,35 @@ def bootstrap(config: dict, nowait: bool = False):
         exit(1)
 
     atexit.register(cleanup)
+    src = 'Oops'
+    first_start = time()
 
-    try:
-        start_chrome(config)
-    except Exception as e:
-        content = str(e) + '\n\n' + traceback.format_exc()
+    while True:
+        try:
+            start_chrome(config)
+        except Exception as e:
+            content = str(e) + '\n\n' + traceback.format_exc()
 
-        if 'no such window: target window already closed' in content:
-            log_error('Bot', 'You closed Chrome window, app can\'t work without it. '
-                             'If you don\'t want to see it, then &yenable headless mode&r in menu.')
-            wait_before_finish()
-            exit(1)
+            if 'no such window: target window already closed' in content:
+                log_error('Bot', 'You closed Chrome window, app can\'t work without it. '
+                                 'If you don\'t want to see it, then &yenable headless mode&r in menu.')
+                wait_before_finish()
+                exit(1)
 
-        path = make_debug_file('unexpected-error', content, True)
+            path = make_debug_file('unexpected-error', content, True)
 
-        print(content)
+            print(content)
 
-        log_error('Oops', f'\n\nSomething unexpected happened! '
-                          f'Share your issue in Discord: {DISCORD_URL} '
-                          f'or open a GitHub issue: {ISSUES_URL}\n\n'
-                          f'Also, please include this file: {str(path.absolute())}')
+            log_error(src, f'\n\nSomething unexpected happened! '
+                           f'Share your issue in Discord: {DISCORD_URL} '
+                           f'or open a GitHub issue: {ISSUES_URL}\n\n'
+                           f'Also, please include this file: {str(path.absolute())}')
 
-        wait_before_finish()
-        exit(1)
+            cleanup()
+
+            if (time() - first_start) > 20:
+                log_info(src, 'Trying to resurrect the app...')
+                continue
+            else:
+                log_info('Won\'t try to resurrect app since the error seems unfixable by restart.')
+                exit(1)

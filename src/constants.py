@@ -3,7 +3,7 @@ from pathlib import Path
 from colorama import Fore
 
 
-CURRENT_VERSION = '2.0.3'
+CURRENT_VERSION = '2.0.4'
 UPDATE_DOWNLOAD_URL = 'https://github.com/ucarno/ow-league-tokens/releases/latest'
 DISCORD_URL = 'https://discord.gg/kkq2XY4cJM'
 ISSUES_URL = 'https://github.com/ucarno/ow-league-tokens/issues'
@@ -44,6 +44,7 @@ DEFAULT_CHROMIUM_FLAGS = [
     '--autoplay-policy=no-user-gesture-required',
     '--disable-extensions',
     '--mute-audio',
+    '--disable-features=Translate',
 ]
 
 COLORS = (

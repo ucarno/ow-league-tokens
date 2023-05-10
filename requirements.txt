@@ -3,3 +3,4 @@ requests
 undetected-chromedriver==3.4.6
 # undetected-chromedriver==3.2.0
 selenium
+certifi==2023.5.7
