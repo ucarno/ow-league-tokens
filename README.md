@@ -80,7 +80,7 @@ Bot can be updated without losing your profile(s) data (no need to login into Go
 * Use `--profiles` to specify profiles you want this app to use (works only with `--nomenu` argument).
 Usage: `--nomenu --profiles my-main friends-acc`
 * There is also a specific flag for Docker that may solve some issues under Linux: `--docker`
-  (includes some Chromium flags, works only with `--nomenu` flag)
+  (includes some Chromium flags, works only with `--nomenu` argument)
 
 ## Docker
 This application supports Docker (sort of, I couldn't make profiles reusable),
