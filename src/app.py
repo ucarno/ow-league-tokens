@@ -328,6 +328,7 @@ def bootstrap(config: dict, nowait: bool = False):
     atexit.register(cleanup)
     src = 'Oops'
     first_start = time()
+    last_crash = 0
 
     while True:
         try:
@@ -352,9 +353,22 @@ def bootstrap(config: dict, nowait: bool = False):
 
             cleanup()
 
-            if (time() - first_start) > 20:
-                log_info(src, 'Trying to resurrect the app...')
-                continue
-            else:
-                log_info('Won\'t try to resurrect app since the error seems unfixable by restart.')
+            seconds_since_start = time() - first_start
+            seconds_since_last_crash = time() - last_crash
+
+            last_crash = time()
+
+            if seconds_since_last_crash < 180:
+                log_info(f'Won\'t try to resurrect app since '
+                         f'it crashed after only {seconds_since_last_crash} seconds since last crash.')
+                wait_before_finish()
                 exit(1)
+
+            if seconds_since_start < 600:
+                log_info(f'Won\'t try to resurrect app since '
+                         f'it crashed after only {seconds_since_start} seconds since start.')
+                wait_before_finish()
+                exit(1)
+
+            log_info(src, 'Trying to resurrect the app...')
+            continue

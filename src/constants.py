@@ -44,7 +44,13 @@ DEFAULT_CHROMIUM_FLAGS = [
     '--autoplay-policy=no-user-gesture-required',
     '--disable-extensions',
     '--mute-audio',
-    '--disable-features=Translate',
+    '--disable-features=Translate,HardwareMediaKeyHandling',
+]
+DOCKER_CHROMIUM_FLAGS = [
+    '--disable-application-cache',
+    '--disable-gpu',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
 ]
 
 COLORS = (

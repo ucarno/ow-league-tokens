@@ -5,7 +5,7 @@ import sys
 from colorama import init
 
 from app import bootstrap
-from constants import PATH_PROFILES, PATH_DEBUG, PATH_ROOT, DISCORD_URL
+from constants import PATH_PROFILES, PATH_DEBUG, PATH_ROOT, DISCORD_URL, DOCKER_CHROMIUM_FLAGS
 from macos import setup_macos_certs
 from menu import menu
 from utils import load_config, get_console_message
@@ -42,7 +42,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--nowait',
         help='App will not wait for Enter key press on error',
-        action='store_true'
+        action='store_true',
+    )
+    parser.add_argument(
+        '--docker',
+        help='Specifying this argument will include additional Chromium flags that will make Docker work '
+             '(works only with `--nomenu` argument)',
+        action='store_true',
     )
     parser.add_argument(
         '--profiles',
@@ -58,6 +64,9 @@ if __name__ == '__main__':
         config = load_config()
         if args.profiles:
             config['profiles'] = args.profiles
+        if args.docker:
+            config['chromium_flags'].extend(DOCKER_CHROMIUM_FLAGS)
+            config['headless'] = False
         bootstrap(config, args.nowait)
     else:
         menu()
