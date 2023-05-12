@@ -1,5 +1,4 @@
 .idea/
-src/config.json
 ow-league-tokens.spec
 
 __pycache__/
@@ -7,5 +6,6 @@ build/
 dist/
 venv/
 
+src/config.json
 src/profiles/
 src/debug/
