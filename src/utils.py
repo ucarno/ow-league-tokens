@@ -6,21 +6,24 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from time import sleep
 
 import requests
 
 from constants import TMPL_LIVE_STREAM_EMBED_URL, COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, \
     CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, \
-    DEFAULT_CHROMIUM_FLAGS
+    DEFAULT_CHROMIUM_FLAGS, PATH_STATS
 
 
 def get_version(version: str) -> tuple:
     return tuple(map(int, (version.split("."))))
 
 
-def wait_before_finish():
+def wait_before_finish(also_exit=False, exit_code=1):
     if not is_nowait():
         input('\n\nPress Enter to close...\n')
+    if also_exit:
+        exit(exit_code)
 
 
 def get_default_config() -> dict:
@@ -29,6 +32,7 @@ def get_default_config() -> dict:
         'enable_owl': True,
         'enable_owc': False,
         'headless': False,
+        'shut_down': False,
         'debug': False,
         'chromium_binary': None,
         'chromium_flags': DEFAULT_CHROMIUM_FLAGS,
@@ -41,16 +45,20 @@ def load_config() -> dict:
             content = f.read()
             f.close()
 
+        default_config = get_default_config()
         content = json.loads(content)
         update_config = False
 
-        # v2.0.2
-        if 'chromium_binary' not in content:
-            update_config = True
-            content['chromium_binary'] = None
-        if 'chromium_flags' not in content:
-            update_config = True
-            content['chromium_flags'] = DEFAULT_CHROMIUM_FLAGS
+        for new_flag in (
+            # v2.0.2
+            'chromium_binary', 'chromium_flags',
+
+            # v2.0.5
+            'shut_down',
+        ):
+            if new_flag not in content:
+                update_config = True
+                content[new_flag] = default_config[new_flag]
 
         if update_config:
             save_config(content)
@@ -66,6 +74,48 @@ def save_config(new_config: dict):
     with open(PATH_CONFIG, 'w+', encoding='utf-8') as f:
         f.write(json.dumps(new_config, indent=4))
         f.close()
+
+
+def load_stats() -> list:
+    content = []
+    if PATH_STATS.exists():
+        with open(PATH_STATS, 'r', encoding='utf-8') as f:
+            content = json.loads(f.read())
+            f.close()
+    return content
+
+
+def save_stats(new_stats: list):
+    with open(PATH_STATS, 'w+', encoding='utf-8') as f:
+        f.write(json.dumps(new_stats, indent=4))
+        f.close()
+
+
+def add_session_stats(session_stats: dict):
+    stats = load_stats()
+    stats.insert(0, session_stats)
+    save_stats(stats)
+
+
+def shut_down_pc():
+    src = 'Shutdown'
+    shutdown_command = []
+
+    if sys.platform.startswith('win32'):
+        shutdown_command = ['shutdown', '-s', '-t', '1']
+    elif sys.platform.startswith('darwin') or sys.platform.startswith('linux'):
+        shutdown_command = ['shutdown', '-h', 'now']
+
+    if not shutdown_command:
+        log_error(src, f'Not sure how to turn off PC on platform \'{sys.platform}\'.')
+        wait_before_finish(True)
+
+    for i in reversed(range(1, 6)):
+        log_info(src, f'&rThis PC will shut down in &y{i} &rsecond{"s" if i > 1 else ""}!')
+        sleep(1)
+
+    log_info(src, '&rShutting down...')
+    subprocess.run(shutdown_command)
 
 
 def run_powershell(command):

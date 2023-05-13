@@ -3,7 +3,7 @@ from pathlib import Path
 from colorama import Fore
 
 
-CURRENT_VERSION = '2.0.4'
+CURRENT_VERSION = '2.0.5'
 UPDATE_DOWNLOAD_URL = 'https://github.com/ucarno/ow-league-tokens/releases/latest'
 DISCORD_URL = 'https://discord.gg/kkq2XY4cJM'
 ISSUES_URL = 'https://github.com/ucarno/ow-league-tokens/issues'
@@ -15,6 +15,7 @@ PATH_ROOT = Path(__file__).parent
 PATH_PROFILES = PATH_ROOT.joinpath('profiles')
 PATH_DEBUG = PATH_ROOT.joinpath('debug')
 PATH_CONFIG = PATH_ROOT.joinpath('config.json')
+PATH_STATS = PATH_ROOT.joinpath('stats.json')
 
 TEST_CHANNEL_ID = 'UCaG0IHN1RMOZ4-U3wDXAkwA'
 OWL_CHANNEL_ID = 'UCiAInBL9kUzz1XRxk66v-gw'

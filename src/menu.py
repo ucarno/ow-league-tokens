@@ -127,9 +127,13 @@ def menu():
                 lambda c: switch_setting(c, 'debug')
             ),
             (
+                f'Turn off PC when stream ends {"&g[enabled]" if config["shut_down"] else "&r[disabled]"}',
+                lambda c: switch_setting(c, 'shut_down')
+            ),
+            (
                 f'Exit',
                 lambda c: exit()
-            )
+            ),
         ]
 
         if first_run:

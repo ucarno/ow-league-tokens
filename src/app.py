@@ -14,7 +14,7 @@ from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, Y
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
     DISCORD_URL, ISSUES_URL
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
-    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes
+    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -124,7 +124,8 @@ def get_driver(profile: str, config: dict) -> uc.Chrome:
             raise e
     except TypeError as e:
         if 'expected str, bytes or os.PathLike object, not NoneType' in str(e):
-            error('Can\'t find browser executable location. &ySpecify it in config.json (field "chromium_binary") '
+            error('Can\'t find browser executable location. &ySpecify it in config.json (field "chromium_binary"). '
+                  'You can get it from this url: chrome://version (search for \'Executable Path\'). '
                   'https://discord.com/channels/1103710176189628429/1103734357031653376/1104075303871062158')
             wait_before_finish()
             exit(1)
@@ -258,12 +259,19 @@ def start_chrome(config: dict):
                     if index != (len(drivers) - 1):
                         delay = randint(5, 15)
                         info(f'Looks like there are more drivers. Adding random {delay} seconds delay before going to '
-                             f'live stream so Google doesn\'t complain about suspicious activity.')
+                             f'live stream.')
                         sleep(delay)
             else:
-                info('&rStream has just ended :(')
+                info('&rStream has just ended :( &cTrack your token earning progress here: '
+                     'https://account.battle.net/transactions/ecosystem/1/5272175')
                 for driver in drivers:
                     driver.get(NEW_TAB_URL)
+
+                if config['shut_down']:
+                    info('&rTurning this PC off... &yHit Ctrl+C to cancel!')
+                    cleanup()
+                    shut_down_pc()
+
         else:
             # nothing changed!
             if current_url:
@@ -359,14 +367,14 @@ def bootstrap(config: dict, nowait: bool = False):
             last_crash = time()
 
             if seconds_since_last_crash < 180:
-                log_info(f'Won\'t try to resurrect app since '
-                         f'it crashed after only {seconds_since_last_crash} seconds since last crash.')
+                log_info(src, f'Won\'t try to resurrect app since '
+                              f'it crashed after only {seconds_since_last_crash} seconds since last crash.')
                 wait_before_finish()
                 exit(1)
 
             if seconds_since_start < 600:
-                log_info(f'Won\'t try to resurrect app since '
-                         f'it crashed after only {seconds_since_start} seconds since start.')
+                log_info(src, f'Won\'t try to resurrect app since '
+                              f'it crashed after only {seconds_since_start} seconds since start.')
                 wait_before_finish()
                 exit(1)
 

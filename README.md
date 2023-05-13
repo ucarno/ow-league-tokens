@@ -124,6 +124,10 @@ Thanks to everyone for using this bot, contributing, leaving feedback and
 helping other people in [our Discord](https://discord.gg/kkq2XY4cJM)!
 
 ## Update History
+### v2.0.5
+* Fixed macOS certificate setup
+* Added option to shut down PC after stream (required root on Linux)
+
 ### v2.0.4
 * Fixed stuck Brave browser headless windows not closing on app start
 * "Fixed" some weird non-descriptive errors from crashing app by restarting the entire app when it crashes.
@@ -132,7 +136,7 @@ _Probably need to migrate to Playwright to actually solve these issues._
 * Added build scripts for Windows, Linux and macOS
 * Disabled `HardwareMediaKeyHandling` feature which captured hardware media key presses
   (you need to delete your `config.json` file for this to take effect).
-* Executables now ship with new sick icon: ![Overwatch League Tokens](assets/icon.ico)
+* Executables are now shipped with new sick icon: ![Overwatch League Tokens](assets/icon.ico)
 
 ### v2.0.3
 * _(Probably)_ Fixed a crash when trying to run multiple headless profiles

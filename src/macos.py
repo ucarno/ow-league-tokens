@@ -1,13 +1,7 @@
-# sample script to install or update a set of default Root Certificates
-# for the ssl module.  Uses the certificates provided by the certifi package:
-#       https://pypi.python.org/pypi/certifi
-
 import os
-import os.path
 import ssl
 import stat
-
-import certifi
+from pathlib import Path
 
 STAT_0o775 = (
     stat.S_IRUSR | stat.S_IWUSR |
@@ -18,21 +12,18 @@ STAT_0o775 = (
 
 
 def setup_macos_certs():
-    openssl_dir, openssl_cafile = os.path.split(
-        ssl.get_default_verify_paths().openssl_cafile)
+    openssl_path = Path(ssl.get_default_verify_paths().openssl_cafile)
+    openssl_dir = openssl_path.parent
 
-    # change working directory to the default SSL directory
-    os.chdir(openssl_dir)
-    relpath_to_certifi_cafile = os.path.relpath(certifi.where())
+    # make sure directory exists
+    openssl_dir.mkdir(parents=True, exist_ok=True)
 
     # removing any existing file or link
-    try:
-        os.remove(openssl_cafile)
-    except FileNotFoundError:
-        pass
+    openssl_path.unlink(True)
 
     # creating symlink to certifi certificate bundle
-    os.symlink(relpath_to_certifi_cafile, openssl_cafile)
+    cert_file = Path(os.environ['REQUESTS_CA_BUNDLE'])
+    openssl_path.symlink_to(cert_file)
 
     # setting permissions
-    os.chmod(openssl_cafile, STAT_0o775)
+    openssl_path.chmod(STAT_0o775)

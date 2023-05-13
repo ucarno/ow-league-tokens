@@ -20,7 +20,7 @@ mkdir ow-league-tokens
 mv lib ow-league-tokens/lib
 cd ow-league-tokens  # /dist/ow-league-tokens
 
-# those files are needed (in root directory) for the app to start
+# these files are required (in root directory) for the app to start
 mv lib/ow-league-tokens.exe .
 mv lib/base_library.zip .
 mv lib/python311.dll .
