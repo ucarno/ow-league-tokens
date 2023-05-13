@@ -26,7 +26,5 @@ mv lib/base_library.zip .
 mv lib/lib-dynload .
 mv lib/libpython3.11.so.1.0 .
 
-echo "ow-league-tokens --nomenu" > Start_Without_Menu.sh
-
 cd ..  # /dist
 zip -9 -rXq ow-league-tokens_Linux.zip ow-league-tokens
