@@ -6,7 +6,7 @@ from time import sleep, time
 
 import json, datetime, calendar
 
-from selenium.common.exceptions import WebDriverException, NoSuchElementException
+from selenium.common.exceptions import WebDriverException
 import selenium.webdriver.support.expected_conditions as EC  # noqa
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
