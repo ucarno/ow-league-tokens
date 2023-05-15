@@ -15,7 +15,7 @@ import undetected_chromedriver as uc
 from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, YOUTUBE_AUTH_ANY_RE, \
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
     DISCORD_URL, ISSUES_URL, \
-    BNET_TOKEN_API, BNET_TOKEN_FAIL
+    BNET_TOKEN_API
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
     make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc
 
@@ -188,12 +188,16 @@ def start_chrome(config: dict):
 
             try:
                 driver.get(BNET_TOKEN_API)
-                WebDriverWait(driver, timeout=10).until(EC.url_matches(f'^({BNET_TOKEN_API}|{BNET_TOKEN_FAIL})'))
+                _data = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre')))
+                data = json.loads(_data.text)
 
                 # signed in to BattleNet
-                if driver.current_url.startswith(BNET_TOKEN_API):
-                    _data = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre')))
-                    data = json.loads(_data.text)
+                if data.get('authenticated') == False:
+                    driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode and sign in to your BattleNet account: '
+                                         '&ghttps://battle.net/login')
+
+                # not signed in to BattleNet
+                else:
                     summary = [balance for balance in data['titleAndVcSummaries'] if balance['currencyCode'] == 'XWA'][0]
                     token_balance = summary['formattedBalance']
                     _utc = datetime.datetime.fromisoformat(summary['lastUpdated'].rstrip("Z") + "+00:00")
@@ -203,11 +207,6 @@ def start_chrome(config: dict):
                     driver_info(driver, f'&mUpdated: &c{date}')
 
                     # driver._token_balance = token_balance
-
-                # not signed in to BattleNet
-                elif driver.current_url.startswith(BNET_TOKEN_FAIL):
-                    driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode and sign in to your BattleNet account: '
-                                         '&ghttps://battle.net/login')
 
             except Exception:
                 driver_error(driver, '&rCould not load BattleNet token balance')
