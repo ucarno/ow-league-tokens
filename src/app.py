@@ -184,10 +184,10 @@ def start_chrome(config: dict):
 
             # BattleNet account
             info('&yChecking BattleNet token balance. '
-                '&rPlay Overwatch&y to update token data')
+                 '&rPlay Overwatch&y to update token data')
 
             try:
-                driver.get('https://account.battle.net/api/vc/ecosystem/1')
+                driver.get(BNET_TOKEN_API)
 
                 WebDriverWait(driver, timeout=10).until(EC.url_matches(f'^({BNET_TOKEN_API}|{BNET_TOKEN_FAIL})'))
 
@@ -203,20 +203,14 @@ def start_chrome(config: dict):
                     driver_info(driver, f'&mUpdated: &c{date}')
 
                     # driver._token_balance = token_balance
-            
+
                 # not signed in to BattleNet
                 elif driver.current_url.startswith(BNET_TOKEN_FAIL):
-                    # TODO > driver.get('https://account.battle.net/')
-                    #      > this can sign you back in if you're partially signed out
                     driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode and sign in to your BattleNet account: '
-                                        '&ghttps://battle.net/login')
-            
-            except (NoSuchElementException) as e:
+                                         '&ghttps://battle.net/login')
+
+            except Exception:
                 driver_error(driver, '&rCould not load BattleNet token balance')
-            
-            except Exception as e:
-                print(type(e).__name__)
-                raise(e)
 
         # Google account
         info('&yChecking if you are logged in...')
