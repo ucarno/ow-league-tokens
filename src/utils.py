@@ -31,6 +31,7 @@ def get_default_config() -> dict:
         'profiles': ['default'],
         'enable_owl': True,
         'enable_owc': False,
+        'token_balance': False,
         'headless': False,
         'shut_down': False,
         'debug': False,

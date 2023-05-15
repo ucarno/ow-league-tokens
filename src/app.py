@@ -4,7 +4,9 @@ import traceback
 from random import randint
 from time import sleep, time
 
-from selenium.common.exceptions import WebDriverException
+import json, datetime, calendar
+
+from selenium.common.exceptions import WebDriverException, NoSuchElementException
 import selenium.webdriver.support.expected_conditions as EC  # noqa
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -12,7 +14,8 @@ import undetected_chromedriver as uc
 
 from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, YOUTUBE_AUTH_ANY_RE, \
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
-    DISCORD_URL, ISSUES_URL
+    DISCORD_URL, ISSUES_URL, \
+    BNET_TOKEN_API, BNET_TOKEN_FAIL
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
     make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc
 
@@ -175,6 +178,47 @@ def start_chrome(config: dict):
     DRIVERS = drivers
 
     for index, driver in enumerate(drivers):
+
+        # if token balance is activated
+        if config['token_balance']:
+
+            # BattleNet account
+            info('&yChecking BattleNet token balance. '
+                '&rPlay Overwatch&y to update token data')
+
+            try:
+                driver.get('https://account.battle.net/api/vc/ecosystem/1')
+
+                WebDriverWait(driver, timeout=10).until(EC.url_matches(f'^({BNET_TOKEN_API}|{BNET_TOKEN_FAIL})'))
+
+                if driver.current_url.startswith(BNET_TOKEN_API):
+                    _data = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre')))
+                    data = json.loads(_data.text)
+                    summary = [balance for balance in data['titleAndVcSummaries'] if balance['currencyCode'] == 'XWA'][0]
+                    token_balance = summary['formattedBalance']
+                    _utc = datetime.datetime.fromisoformat(summary['lastUpdated'].rstrip("Z") + "+00:00")
+                    date = datetime.datetime.fromtimestamp(calendar.timegm(_utc.timetuple())).strftime('%B %d, %I:%M%p').lower().capitalize()
+
+                    driver_info(driver, f'&mToken balance: &c{token_balance}')
+                    driver_info(driver, f'&mUpdated: &c{date}')
+
+                    # driver._token_balance = token_balance
+            
+                # not signed in to BattleNet
+                elif driver.current_url.startswith(BNET_TOKEN_FAIL):
+                    # TODO > driver.get('https://account.battle.net/')
+                    #      > this can sign you back in if you're partially signed out
+                    driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode and sign in to your BattleNet account: '
+                                        '&ghttps://battle.net/login')
+            
+            except (NoSuchElementException) as e:
+                driver_error(driver, '&rCould not load BattleNet token balance')
+            
+            except Exception as e:
+                print(type(e).__name__)
+                raise(e)
+
+        # Google account
         info('&yChecking if you are logged in...')
 
         auth_check_time = time()
