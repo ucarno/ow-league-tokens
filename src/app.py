@@ -188,9 +188,9 @@ def start_chrome(config: dict):
 
             try:
                 driver.get(BNET_TOKEN_API)
-
                 WebDriverWait(driver, timeout=10).until(EC.url_matches(f'^({BNET_TOKEN_API}|{BNET_TOKEN_FAIL})'))
 
+                # signed in to BattleNet
                 if driver.current_url.startswith(BNET_TOKEN_API):
                     _data = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre')))
                     data = json.loads(_data.text)
