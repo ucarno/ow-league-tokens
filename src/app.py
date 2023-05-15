@@ -4,7 +4,8 @@ import traceback
 from random import randint
 from time import sleep, time
 
-import json, datetime, calendar
+import json, calendar
+from datetime import datetime
 
 from selenium.common.exceptions import WebDriverException
 import selenium.webdriver.support.expected_conditions as EC  # noqa
@@ -183,25 +184,24 @@ def start_chrome(config: dict):
         if config['token_balance']:
 
             # BattleNet account
-            info('&yChecking BattleNet token balance. '
-                 '&rPlay Overwatch&y to update token data')
+            info('&yChecking BattleNet token balance. &rPlay Overwatch&y to update token data')
 
             try:
                 driver.get(BNET_TOKEN_API)
-                _data = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre')))
-                data = json.loads(_data.text)
-
-                # signed in to BattleNet
-                if data.get('authenticated') == False:
-                    driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode and sign in to your BattleNet account: '
-                                         '&ghttps://battle.net/login')
+                # TODO does not always work on a cold boot? may have to load https://account.battle.net/ before?
+                data = json.loads(WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre'))).text)
 
                 # not signed in to BattleNet
+                if data.get('authenticated') == False:
+                    driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode'
+                                         'and sign in to your BattleNet account: &ghttps://battle.net/login')
+
+                # signed in to BattleNet
                 else:
                     summary = [balance for balance in data['titleAndVcSummaries'] if balance['currencyCode'] == 'XWA'][0]
                     token_balance = summary['formattedBalance']
-                    _utc = datetime.datetime.fromisoformat(summary['lastUpdated'].rstrip("Z") + "+00:00")
-                    date = datetime.datetime.fromtimestamp(calendar.timegm(_utc.timetuple())).strftime('%B %d, %I:%M%p').lower().capitalize()
+                    _utc = datetime.fromisoformat(summary['lastUpdated'].rstrip("Z") + "+00:00")
+                    date = datetime.fromtimestamp(calendar.timegm(_utc.timetuple())).strftime('%B %d, %I:%M%p').lower().capitalize()
 
                     driver_info(driver, f'&mToken balance: &c{token_balance}')
                     driver_info(driver, f'&mUpdated: &c{date}')
