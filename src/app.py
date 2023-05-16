@@ -186,24 +186,28 @@ def start_chrome(config: dict):
             # BattleNet account
             info('&yChecking BattleNet token balance. &rPlay Overwatch&y to update token data')
 
-            try:
+            def download():
                 driver.get(BNET_TOKEN_API)
-                # TODO does not always work on a cold boot? may have to load https://account.battle.net/ before?
-                data = json.loads(WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.TAG_NAME, 'pre'))).text)
+                return json.loads(driver.find_element(By.TAG_NAME, 'pre').text)
 
+            try:
                 # not signed in to BattleNet
-                if data.get('authenticated') == False:
-                    driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode'
-                                         'and sign in to your BattleNet account: &ghttps://battle.net/login')
+                if (data := download()).get('authenticated') == False:
+                    # new token
+                    driver.get(data['loginUri'])
+
+                    # no new token
+                    if (data := download()).get('authenticated') == False:
+                        driver_error(driver, '&mTo see your current token balance, open this app in &rNOT headless&m mode'
+                                         'and sign in to your BattleNet account: &ghttps://account.battle.net/')
 
                 # signed in to BattleNet
-                else:
+                if data.get('authenticated') != False:
                     summary = [balance for balance in data['titleAndVcSummaries'] if balance['currencyCode'] == 'XWA'][0]
-                    token_balance = summary['formattedBalance']
                     _utc = datetime.fromisoformat(summary['lastUpdated'].rstrip("Z") + "+00:00")
                     date = datetime.fromtimestamp(calendar.timegm(_utc.timetuple())).strftime('%B %d, %I:%M%p').lower().capitalize()
 
-                    driver_info(driver, f'&mToken balance: &c{token_balance}')
+                    driver_info(driver, f'&mToken balance: &c{summary["formattedBalance"]}')
                     driver_info(driver, f'&mUpdated: &c{date}')
 
                     # driver._token_balance = token_balance
