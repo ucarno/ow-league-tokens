@@ -125,8 +125,8 @@ helping other people in [our Discord](https://discord.gg/kkq2XY4cJM)!
 
 ## Update History
 ### v2.0.5
+* Added option to shut down PC after stream (requires root on Linux)
 * Fixed macOS certificate setup
-* Added option to shut down PC after stream (required root on Linux)
 
 ### v2.0.4
 * Fixed stuck Brave browser headless windows not closing on app start
