@@ -123,6 +123,10 @@ def menu():
                 lambda c: switch_setting(c, 'headless')
             ),
             (
+                f'Switch time delta mode {"&g[enabled]" if config["time_delta"] else "&r[disabled]"}',
+                lambda c: switch_setting(c, 'time_delta')
+            ),
+            (
                 f'Switch debug mode {"&g[enabled]" if config["debug"] else "&r[disabled]"}',
                 lambda c: switch_setting(c, 'debug')
             ),

@@ -5,7 +5,7 @@ import subprocess
 import sys
 import traceback
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from time import sleep
 
@@ -13,7 +13,7 @@ import requests
 
 from constants import TMPL_LIVE_STREAM_EMBED_URL, COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, \
     CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, \
-    DEFAULT_CHROMIUM_FLAGS, PATH_STATS
+    DEFAULT_CHROMIUM_FLAGS, PATH_STATS, SCHEDULE_URL
 
 
 def get_version(version: str) -> tuple:
@@ -35,6 +35,7 @@ def get_default_config() -> dict:
         'headless': False,
         'shut_down': False,
         'debug': False,
+        'time_delta': False,
         'chromium_binary': None,
         'chromium_flags': DEFAULT_CHROMIUM_FLAGS,
     }
@@ -158,7 +159,14 @@ def get_active_stream(channel_id: str) -> str | None:
         make_debug_file('failed-getting-active-stream', tb)
         return
 
-   
+def get_relative_time():    
+    resSCH = requests.get(SCHEDULE_URL,  timeout=10).text
+    JSONSCH = json.loads(re.search(r'statusText":"Watch Online","date":(.*?),"competitors":', resSCH).group(1))
+    unix_time =(JSONSCH['startDate']) 
+    dt = datetime.fromtimestamp(unix_time/1000, timezone.utc)
+    now = datetime.now(timezone.utc)
+    delta_time = dt - now
+    return str(delta_time - timedelta(microseconds=delta_time.microseconds))
 
 def check_for_new_version():
     log_src = 'Version'
