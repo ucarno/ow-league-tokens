@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import traceback
+import re
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -147,46 +148,17 @@ def get_active_stream(channel_id: str) -> str | None:
     src = 'LiveCheck'
 
     try:
-        response = requests.get(TMPL_LIVE_STREAM_EMBED_URL % channel_id, timeout=10).text
+        response = requests.get('https://www.youtube.com/channel/%s' % channel_id, timeout=10).text
+        if "hqdefault_live.jpg" in response:
+            video_id = re.search(r'vi/(.*?)/hqdefault_live.jpg', response).group(1)
+            return TMPL_LIVE_STREAM_URL % video_id
     except requests.RequestException as e:
         log_error(src, f'&rLive stream check failed: {str(e)}')
         tb = traceback.format_exc()
         make_debug_file('failed-getting-active-stream', tb)
         return
 
-    try:
-        response_data = json.loads(response.split('ytcfg.set(')[1].split(');window.ytcfg.obfuscatedData_')[0])
-    except (IndexError, json.JSONDecodeError) as e:
-        log_error(src, '&rFailed parsing live stream data from YouTube embed...')
-        make_debug_file('livecheck_parsing', response)
-        return
-
-    try:
-        player_data = response_data['PLAYER_VARS']
-    except KeyError:
-        log_error(src, 'Could not access "PLAYER_VARS". Trying to get ID using another method...')
-
-        make_debug_file('livecheck_status', json.dumps(response_data))
-
-        try:
-            video_id = response_data['VIDEO_ID']
-            log_info(src, 'Got video ID using another method! '
-                          'But not sure whether it is a live stream or just video...')
-            return TMPL_LIVE_STREAM_URL % video_id
-        except KeyError:
-            log_error(src, 'Could not get live stream video id.')
-            return
-
-    try:
-        video_id = player_data['video_id']
-        embedded_player_response = json.loads(player_data['embedded_player_response'])
-
-        if embedded_player_response['previewPlayabilityStatus']['status'] == 'OK':
-            return TMPL_LIVE_STREAM_URL % video_id
-    except KeyError as e:
-        log_error(src, f'Could not get stream status: {str(e)}.')
-        make_debug_file('livecheck_general', traceback.format_exc() + '\n\n' + json.dumps(player_data))
-
+   
 
 def check_for_new_version():
     log_src = 'Version'
