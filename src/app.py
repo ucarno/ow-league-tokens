@@ -14,7 +14,7 @@ from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, Y
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
     DISCORD_URL, ISSUES_URL
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
-    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc
+    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc, get_relative_time
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -239,7 +239,10 @@ def start_chrome(config: dict):
                 debug('&gOWL stream is online!')
                 current_url, current_src = url, 'OWL'
                 skip_owc_check = True
-
+            elif config['time_delta']:
+                delta = get_relative_time()
+                info('time until next live stream' + delta)
+                
         if config['enable_owc'] and not skip_owc_check:
             url = get_active_stream(OWC_CHANNEL_ID)
             if url:

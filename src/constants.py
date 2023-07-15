@@ -22,6 +22,8 @@ OWL_CHANNEL_ID = 'UCiAInBL9kUzz1XRxk66v-gw'
 # OWL_CHANNEL_ID = TEST_CHANNEL_ID
 OWC_CHANNEL_ID = 'UCWPW0pjx6gncOEnTW8kYzrg'
 
+SCHEDULE_URL = 'https://overwatchleague.com/en-us/schedule'
+
 TMPL_LIVE_STREAM_EMBED_URL = 'https://www.youtube.com/embed/live_stream?channel=%s'
 TMPL_LIVE_STREAM_URL = 'https://www.youtube.com/watch?v=%s'
 
