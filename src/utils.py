@@ -13,7 +13,7 @@ import requests
 
 from constants import TMPL_LIVE_STREAM_EMBED_URL, COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, \
     CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, \
-    DEFAULT_CHROMIUM_FLAGS, PATH_STATS, SCHEDULE_URL
+    DEFAULT_CHROMIUM_FLAGS, PATH_STATS, SCHEDULE_URL, FAKE_USER_AGENT
 
 
 def get_version(version: str) -> tuple:
@@ -36,6 +36,7 @@ def get_default_config() -> dict:
         'shut_down': False,
         'debug': False,
         'time_delta': False,
+        'schedule': False,
         'chromium_binary': None,
         'chromium_flags': DEFAULT_CHROMIUM_FLAGS,
     }
@@ -57,6 +58,9 @@ def load_config() -> dict:
 
             # v2.0.5
             'shut_down',
+
+            # v2.0.6
+            'schedule',
         ):
             if new_flag not in content:
                 update_config = True
@@ -144,29 +148,69 @@ def kill_headless_chromes(binary_path: str | None = None):
             log_debug(src, f'Failed killing Chrome process(es): {str(e)}')
 
 
+def make_get_request(url: str):
+    return requests.get(url, headers={'User-Agent': FAKE_USER_AGENT}, timeout=10)
+
+
 def get_active_stream(channel_id: str) -> str | None:
     """Returns stream url if a channel with specified channel_id has active stream"""
     src = 'LiveCheck'
 
     try:
-        response = requests.get('https://www.youtube.com/channel/%s' % channel_id, timeout=10).text
-        if "hqdefault_live.jpg" in response:
+        response = make_get_request('https://www.youtube.com/channel/%s' % channel_id).text
+        with open('response_sample.html', 'w+', encoding='utf-8') as f:
+            f.write(response)
+            f.close()
+        if 'hqdefault_live.jpg' in response:
             video_id = re.search(r'vi/(.*?)/hqdefault_live.jpg', response).group(1)
             return TMPL_LIVE_STREAM_URL % video_id
-    except requests.RequestException as e:
+    except Exception as e:
         log_error(src, f'&rLive stream check failed: {str(e)}')
-        tb = traceback.format_exc()
-        make_debug_file('failed-getting-active-stream', tb)
+        make_debug_file('failed-getting-active-stream', traceback.format_exc())
         return
 
-def get_relative_time():    
-    resSCH = requests.get(SCHEDULE_URL,  timeout=10).text
-    JSONSCH = json.loads(re.search(r'statusText":"Watch Online","date":(.*?),"competitors":', resSCH).group(1))
-    unix_time =(JSONSCH['startDate']) 
-    dt = datetime.fromtimestamp(unix_time/1000, timezone.utc)
-    now = datetime.now(timezone.utc)
-    delta_time = dt - now
-    return str(delta_time - timedelta(microseconds=delta_time.microseconds))
+
+def get_seconds_till_next_match() -> float | None:
+    src = 'Schedule'
+
+    try:
+        # getting page json
+        schedule_html = requests.get(SCHEDULE_URL,  timeout=10).text
+        next_data = (
+            schedule_html
+            .split('<script id="__NEXT_DATA__" type="application/json">')[1]
+            .split('</script>')[0].strip()
+        )
+        schedule_json = json.loads(next_data)
+
+        # getting matches
+        blocks = schedule_json['props']['pageProps']['blocks']
+        matches: list = []
+        for block in blocks:
+            if 'owlHeader' in block.keys():
+                matches = block['owlHeader']['scoreStripList']['scoreStrip']['matches']
+                break
+
+        if not matches:
+            raise Exception('Could not get matches.')
+
+        pending_matches = list(filter(lambda match: match.get('status') == 'PENDING', matches))
+        pending_matches.sort(key=lambda match: match['date']['startDate'])
+
+        if not pending_matches:
+            raise Exception(f"No matches with status 'PENDING'.")
+
+        timestamp_ms = pending_matches[0]['date']['startDate']
+        delta = datetime.fromtimestamp(timestamp_ms / 1000, timezone.utc) - datetime.now(timezone.utc)
+        total_seconds = delta.total_seconds()
+
+        log_info(src, f'Closest match will be played in {delta}.')
+
+        return total_seconds
+    except Exception as e:
+        log_error(src, f'&rSchedule check failed: {str(e)}. Falling back to regular checks.')
+        make_debug_file('failed-getting-schedule', traceback.format_exc())
+
 
 def check_for_new_version():
     log_src = 'Version'

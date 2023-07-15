@@ -119,12 +119,12 @@ def menu():
                 view_profiles
             ),
             (
-                f'Switch headless mode {"&g[enabled]" if config["headless"] else "&r[disabled]"} &m(experimental!)',
+                f'Switch headless mode {"&g[enabled]" if config["headless"] else "&r[disabled]"}',
                 lambda c: switch_setting(c, 'headless')
             ),
             (
-                f'Switch time delta mode {"&g[enabled]" if config["time_delta"] else "&r[disabled]"}',
-                lambda c: switch_setting(c, 'time_delta')
+                f'Switch schedule mode {"&g[enabled]" if config["schedule"] else "&r[disabled]"} &m(experimental!)',
+                lambda c: switch_setting(c, 'schedule')
             ),
             (
                 f'Switch debug mode {"&g[enabled]" if config["debug"] else "&r[disabled]"}',

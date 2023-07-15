@@ -14,7 +14,7 @@ from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, Y
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
     DISCORD_URL, ISSUES_URL
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
-    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc, get_relative_time
+    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc, get_seconds_till_next_match
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -200,10 +200,10 @@ def start_chrome(config: dict):
             else:
                 driver_info(driver, '&rAuthentication check failed. '
                                     '&mPlease log in to your Google account. If you don\'t see Google\'s login screen, '
-                                    'then go to https://gmail.com/ and log in there and then go to '
-                                    'https://youtube.com/. You have 5000 seconds for this.\n'
-                                    '&rIf you still can\'t log in, then sync your Google Chrome profile '
-                                    'using profile button located in upper right corner of a browser.')
+                                    'then sync your Google Chrome profile using profile button located in upper right '
+                                    'corner of a browser and go manually to https://www.youtube.com/ '
+                                    'Please leave your browser open for a couple of minutes after logging in to make '
+                                    'sure your session persists. You have 5000 seconds for that.\n')
 
                 WebDriverWait(driver, 5000).until(EC.url_matches(YOUTUBE_AUTH_PASS_RE))
                 driver.get(NEW_TAB_URL)
@@ -224,6 +224,7 @@ def start_chrome(config: dict):
     live_url = None
     live_src = None
     checks_until_reload = 3
+    sleep_schedule = 0
 
     while True:
         skip_owc_check = False
@@ -239,9 +240,10 @@ def start_chrome(config: dict):
                 debug('&gOWL stream is online!')
                 current_url, current_src = url, 'OWL'
                 skip_owc_check = True
-            elif config['time_delta']:
-                delta = get_relative_time()
-                info('time until next live stream' + delta)
+            elif config['schedule']:
+                seconds = get_seconds_till_next_match()
+                if seconds and seconds > 30 * 60:
+                    sleep_schedule = seconds - 30 * 60
                 
         if config['enable_owc'] and not skip_owc_check:
             url = get_active_stream(OWC_CHANNEL_ID)
@@ -297,6 +299,11 @@ def start_chrome(config: dict):
                 info('Nothing changed, stream still &rOffline&y!')
 
         live_url, live_src = current_url, current_src
+        if sleep_schedule:
+            info(f'Bot is going to sleep for {sleep_schedule} due to schedule.')
+            sleep(sleep_schedule)
+            sleep_schedule = 0
+
         sleep(STREAM_CHECK_FREQUENCY)
 
 
