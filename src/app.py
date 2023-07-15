@@ -14,7 +14,7 @@ from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, Y
     OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
     DISCORD_URL, ISSUES_URL
 from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
-    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc
+    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc, get_seconds_till_next_match
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -166,6 +166,8 @@ def start_chrome(config: dict):
 
     kill_headless_chromes()
 
+    live_check_driver = get_driver('live-check', config)
+
     drivers = []
     for index, profile in enumerate(config['profiles']):
         drivers.append(get_driver(profile, config))
@@ -200,10 +202,10 @@ def start_chrome(config: dict):
             else:
                 driver_info(driver, '&rAuthentication check failed. '
                                     '&mPlease log in to your Google account. If you don\'t see Google\'s login screen, '
-                                    'then go to https://gmail.com/ and log in there and then go to '
-                                    'https://youtube.com/. You have 5000 seconds for this.\n'
-                                    '&rIf you still can\'t log in, then sync your Google Chrome profile '
-                                    'using profile button located in upper right corner of a browser.')
+                                    'then sync your Google Chrome profile using profile button located in upper right '
+                                    'corner of a browser and go manually to https://www.youtube.com/ '
+                                    'Please leave your browser open for a couple of minutes after logging in to make '
+                                    'sure your session persists. You have 5000 seconds for that.\n')
 
                 WebDriverWait(driver, 5000).until(EC.url_matches(YOUTUBE_AUTH_PASS_RE))
                 driver.get(NEW_TAB_URL)
@@ -224,6 +226,7 @@ def start_chrome(config: dict):
     live_url = None
     live_src = None
     checks_until_reload = 3
+    sleep_schedule = 0
 
     while True:
         skip_owc_check = False
@@ -234,14 +237,22 @@ def start_chrome(config: dict):
         info('Checking for stream status...')
 
         if config['enable_owl']:
-            url = get_active_stream(OWL_CHANNEL_ID)
+            url = get_active_stream(OWL_CHANNEL_ID, live_check_driver)
             if url:
                 debug('&gOWL stream is online!')
                 current_url, current_src = url, 'OWL'
                 skip_owc_check = True
-
+            elif config['schedule']:
+                info('Considering schedule due to stream being offline...')
+                seconds = get_seconds_till_next_match()
+                if seconds and seconds > 30 * 60:
+                    info('Schedule approved! Bot will start checking stream manually 30 min before the scheduled match.')
+                    sleep_schedule = seconds - 30 * 60
+                else:
+                    info('Schedule is not an option.')
+                
         if config['enable_owc'] and not skip_owc_check:
-            url = get_active_stream(OWC_CHANNEL_ID)
+            url = get_active_stream(OWC_CHANNEL_ID, live_check_driver)
             if url:
                 debug('&gOWC stream is online!')
                 current_url, current_src = url, 'OWC'
@@ -294,7 +305,12 @@ def start_chrome(config: dict):
                 info('Nothing changed, stream still &rOffline&y!')
 
         live_url, live_src = current_url, current_src
-        sleep(STREAM_CHECK_FREQUENCY)
+        if sleep_schedule:
+            info(f'Bot is going to sleep for {round(sleep_schedule)} seconds due to enabled schedule option.')
+            sleep(sleep_schedule)
+            sleep_schedule = 0
+
+        sleep(STREAM_CHECK_FREQUENCY + randint(0, 60))
 
 
 def cleanup():
@@ -354,10 +370,17 @@ def bootstrap(config: dict, nowait: bool = False):
 
             print(content)
 
-            log_error(src, f'\n\nSomething unexpected happened! '
-                           f'Share your issue in Discord: {DISCORD_URL} '
-                           f'or open a GitHub issue: {ISSUES_URL}\n\n'
-                           f'Also, please include this file: {str(path.absolute())}')
+            log_error(src, f'\n\n&rSomething unexpected happened!\n\n'
+                           f'&mFollow these steps and check if app works after each. '
+                           f'These actions will fix 99% of problems.'
+                           f'\n\n'
+                           f'&c1. UPDATE YOUR BROWSER BY GOING TO `&gchrome://help&c`\n'
+                           f'2. DELETE `&gprofiles/&c` FOLDER\n'
+                           f'3. RESTART YOUR PC'
+                           f'\n\n'
+                           f'&rIf these steps didn\'t help, then share your issue in Discord: &y{DISCORD_URL}&r '
+                           f'or open a GitHub issue: &y{ISSUES_URL}&r\n\n'
+                           f'Also, please include this file: &y{str(path.absolute())}&r')
 
             cleanup()
 
