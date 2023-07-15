@@ -125,7 +125,7 @@ helping other people in [our Discord](https://discord.gg/kkq2XY4cJM)!
 
 ## Update History
 ### v2.0.6
-_Thanks [1Gzy](https://github.com/1Gzy) for implementation idea!_
+_Thanks [1Gzy](https://github.com/1Gzy) for pull request and implementation ideas!_
 * Fixes [this](https://github.com/ucarno/ow-league-tokens/issues/85) issue by not relying on live embed url.
 * Added experimental schedule mode based on [this](https://overwatchleague.com/en-us/schedule) schedule from OWL website.
 This option will fall back to checking stream status using new method if something goes wrong.

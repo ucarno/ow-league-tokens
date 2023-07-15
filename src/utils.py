@@ -5,15 +5,18 @@ import subprocess
 import sys
 import traceback
 import re
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
+import undetected_chromedriver as uc
+from selenium.webdriver.common.by import By
 
 import requests
 
-from constants import TMPL_LIVE_STREAM_EMBED_URL, COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, \
-    CURRENT_VERSION, VERSION_ENVIRON, DEBUG_ENVIRON, PATH_CONFIG, UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, \
-    DEFAULT_CHROMIUM_FLAGS, PATH_STATS, SCHEDULE_URL, FAKE_USER_AGENT
+from constants import (
+    COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, CURRENT_VERSION, DEBUG_ENVIRON, PATH_CONFIG,
+    UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, DEFAULT_CHROMIUM_FLAGS, PATH_STATS, SCHEDULE_URL, FAKE_USER_AGENT, NEW_TAB_URL
+)
 
 
 def get_version(version: str) -> tuple:
@@ -152,15 +155,37 @@ def make_get_request(url: str):
     return requests.get(url, headers={'User-Agent': FAKE_USER_AGENT}, timeout=10)
 
 
-def get_active_stream(channel_id: str) -> str | None:
+def get_active_stream(channel_id: str, driver: uc.Chrome | None = None) -> str | None:
     """Returns stream url if a channel with specified channel_id has active stream"""
     src = 'LiveCheck'
 
-    try:
+    check_url = 'https://www.youtube.com/channel/%s' % channel_id
+
+    driver_failed = False
+
+    if driver:
+        log_debug(src, 'Checking stream status using WebDriver...')
+        driver.get(check_url)
+        if 'consent.youtube.com' in driver.current_url:
+            log_debug(src, 'YouTube asked for consent')
+            try:
+                element = driver.find_element(By.XPATH, '//form[@action="https://consent.youtube.com/save"]')
+                element.click()
+            except:
+                log_error(src, 'Failed to get stream status using driver!')
+                driver_failed = True
+                driver.get(NEW_TAB_URL)
+
+        if not driver_failed:
+            sleep(5)
+            response = driver.execute_script("return document.getElementsByTagName('html')[0].innerHTML")
+            driver.get(NEW_TAB_URL)
+
+    if not driver or driver_failed:
+        log_debug(src, 'Checking stream status using \'requests\'...')
         response = make_get_request('https://www.youtube.com/channel/%s' % channel_id).text
-        with open('response_sample.html', 'w+', encoding='utf-8') as f:
-            f.write(response)
-            f.close()
+
+    try:
         if 'hqdefault_live.jpg' in response:
             video_id = re.search(r'vi/(.*?)/hqdefault_live.jpg', response).group(1)
             return TMPL_LIVE_STREAM_URL % video_id
@@ -175,7 +200,7 @@ def get_seconds_till_next_match() -> float | None:
 
     try:
         # getting page json
-        schedule_html = requests.get(SCHEDULE_URL,  timeout=10).text
+        schedule_html = make_get_request(SCHEDULE_URL).text
         next_data = (
             schedule_html
             .split('<script id="__NEXT_DATA__" type="application/json">')[1]

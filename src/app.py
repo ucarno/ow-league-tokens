@@ -166,6 +166,8 @@ def start_chrome(config: dict):
 
     kill_headless_chromes()
 
+    live_check_driver = get_driver('live-check', config)
+
     drivers = []
     for index, profile in enumerate(config['profiles']):
         drivers.append(get_driver(profile, config))
@@ -235,18 +237,22 @@ def start_chrome(config: dict):
         info('Checking for stream status...')
 
         if config['enable_owl']:
-            url = get_active_stream(OWL_CHANNEL_ID)
+            url = get_active_stream(OWL_CHANNEL_ID, live_check_driver)
             if url:
                 debug('&gOWL stream is online!')
                 current_url, current_src = url, 'OWL'
                 skip_owc_check = True
             elif config['schedule']:
+                info('Considering schedule due to stream being offline...')
                 seconds = get_seconds_till_next_match()
                 if seconds and seconds > 30 * 60:
+                    info('Schedule approved! Bot will start checking stream manually 30 min before the scheduled match.')
                     sleep_schedule = seconds - 30 * 60
+                else:
+                    info('Schedule is not an option.')
                 
         if config['enable_owc'] and not skip_owc_check:
-            url = get_active_stream(OWC_CHANNEL_ID)
+            url = get_active_stream(OWC_CHANNEL_ID, live_check_driver)
             if url:
                 debug('&gOWC stream is online!')
                 current_url, current_src = url, 'OWC'
@@ -300,11 +306,11 @@ def start_chrome(config: dict):
 
         live_url, live_src = current_url, current_src
         if sleep_schedule:
-            info(f'Bot is going to sleep for {sleep_schedule} due to schedule.')
+            info(f'Bot is going to sleep for {round(sleep_schedule)} seconds due to enabled schedule option.')
             sleep(sleep_schedule)
             sleep_schedule = 0
 
-        sleep(STREAM_CHECK_FREQUENCY)
+        sleep(STREAM_CHECK_FREQUENCY + randint(0, 60))
 
 
 def cleanup():
@@ -364,10 +370,17 @@ def bootstrap(config: dict, nowait: bool = False):
 
             print(content)
 
-            log_error(src, f'\n\nSomething unexpected happened! '
-                           f'Share your issue in Discord: {DISCORD_URL} '
-                           f'or open a GitHub issue: {ISSUES_URL}\n\n'
-                           f'Also, please include this file: {str(path.absolute())}')
+            log_error(src, f'\n\n&rSomething unexpected happened!\n\n'
+                           f'&mFollow these steps and check if app works after each. '
+                           f'These actions will fix 99% of problems.'
+                           f'\n\n'
+                           f'&c1. UPDATE YOUR BROWSER BY GOING TO `&gchrome://help&c`\n'
+                           f'2. DELETE `&gprofiles/&c` FOLDER\n'
+                           f'3. RESTART YOUR PC'
+                           f'\n\n'
+                           f'&rIf these steps didn\'t help, then share your issue in Discord: &y{DISCORD_URL}&r '
+                           f'or open a GitHub issue: &y{ISSUES_URL}&r\n\n'
+                           f'Also, please include this file: &y{str(path.absolute())}&r')
 
             cleanup()
 
