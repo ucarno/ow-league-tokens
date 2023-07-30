@@ -10,11 +10,37 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 import undetected_chromedriver as uc
 
-from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, YOUTUBE_AUTH_ANY_RE, \
-    OWL_CHANNEL_ID, PATH_PROFILES, OWC_CHANNEL_ID, YOUTUBE_AUTH_PASS_RE, STREAM_CHECK_FREQUENCY, NEW_TAB_URL, \
-    DISCORD_URL, ISSUES_URL
-from utils import log_error, log_info, log_debug, get_active_stream, is_debug, check_for_new_version, set_debug, \
-    make_debug_file, get_console_message, set_nowait, wait_before_finish, kill_headless_chromes, shut_down_pc, get_seconds_till_next_match
+from constants import (
+    YOUTUBE_LOGIN_URL,
+    YOUTUBE_AUTH_PASS,
+    YOUTUBE_AUTH_FAIL,
+    OWL_CHANNEL_ID,
+    PATH_PROFILES,
+    OWC_CHANNEL_ID,
+    STREAM_CHECK_FREQUENCY,
+    NEW_TAB_URL,
+    DISCORD_URL,
+    ISSUES_URL,
+)
+from utils import (
+    hide_chat,
+    log_error,
+    log_info,
+    log_debug,
+    get_active_stream,
+    is_debug,
+    check_for_new_version,
+    check_rewards,
+    set_debug,
+    make_debug_file,
+    get_console_message,
+    set_nowait,
+    url_starts_with,
+    wait_before_finish,
+    kill_headless_chromes,
+    shut_down_pc,
+    get_seconds_till_next_match,
+)
 
 error = lambda msg: log_error(f'Bot', msg)
 info = lambda msg: log_info(f'Bot', msg)
@@ -133,13 +159,16 @@ def get_driver(profile: str, config: dict) -> uc.Chrome:
 
     driver.set_window_size(1200, 800)
     setattr(driver, '__profile_name', profile)
+    driver.wait = lambda seconds=10: WebDriverWait(driver, seconds)
 
     return driver
 
 
 def watch_broadcast(driver: uc.Chrome, url: str):
-    driver_info(driver, 'Driver is going to stream at ' + url + '...')
+    driver_info(driver, f'Driver is going to stream at {url}')
     driver.get(url)
+    hide_chat(driver)
+    check_rewards(driver)
     # todo: find a way to change quality without relying on English labels
     # driver.implicitly_wait(3)
     # setting = driver.find_element(By.CLASS_NAME, 'ytp-settings-button')
@@ -168,7 +197,7 @@ def start_chrome(config: dict):
 
     live_check_driver = get_driver('live-check', config)
 
-    drivers = []
+    drivers: list[uc.Chrome] = []
     for index, profile in enumerate(config['profiles']):
         drivers.append(get_driver(profile, config))
         if index == 0:
@@ -183,7 +212,10 @@ def start_chrome(config: dict):
         driver.get(YOUTUBE_LOGIN_URL)
 
         try:
-            WebDriverWait(driver, timeout=10).until(EC.url_matches(YOUTUBE_AUTH_ANY_RE))
+            driver.wait().until(EC.any_of(
+                url_starts_with(YOUTUBE_AUTH_PASS),
+                url_starts_with(YOUTUBE_AUTH_FAIL)
+            ))
         except WebDriverException:
             error(f'&rAuthentication check failed. You were not meant to be on URL "{driver.current_url}".')
             driver.quit()
@@ -207,7 +239,7 @@ def start_chrome(config: dict):
                                     'Please leave your browser open for a couple of minutes after logging in to make '
                                     'sure your session persists. You have 5000 seconds for that.\n')
 
-                WebDriverWait(driver, 5000).until(EC.url_matches(YOUTUBE_AUTH_PASS_RE))
+                driver.wait(seconds=5000).until(url_starts_with(YOUTUBE_AUTH_PASS))
                 driver.get(NEW_TAB_URL)
 
         elif driver.current_url.startswith(YOUTUBE_AUTH_PASS):
@@ -224,7 +256,6 @@ def start_chrome(config: dict):
     info('Setting stream status as &rOffline&y by default. Started looking for live stream...')
 
     live_url = None
-    live_src = None
     checks_until_reload = 3
     sleep_schedule = 0
 
@@ -232,7 +263,6 @@ def start_chrome(config: dict):
         skip_owc_check = False
 
         current_url = None
-        current_src = None
 
         info('Checking for stream status...')
 
@@ -240,7 +270,7 @@ def start_chrome(config: dict):
             url = get_active_stream(OWL_CHANNEL_ID, live_check_driver)
             if url:
                 debug('&gOWL stream is online!')
-                current_url, current_src = url, 'OWL'
+                current_url = url
                 skip_owc_check = True
             elif config['schedule']:
                 info('Considering schedule due to stream being offline...')
@@ -255,7 +285,7 @@ def start_chrome(config: dict):
             url = get_active_stream(OWC_CHANNEL_ID, live_check_driver)
             if url:
                 debug('&gOWC stream is online!')
-                current_url, current_src = url, 'OWC'
+                current_url = url
 
         if current_url != live_url:
             checks_until_reload = 3
@@ -304,7 +334,7 @@ def start_chrome(config: dict):
             else:
                 info('Nothing changed, stream still &rOffline&y!')
 
-        live_url, live_src = current_url, current_src
+        live_url = current_url
         if sleep_schedule:
             info(f'Bot is going to sleep for {round(sleep_schedule)} seconds due to enabled schedule option.')
             sleep(sleep_schedule)

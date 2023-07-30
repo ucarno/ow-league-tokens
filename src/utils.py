@@ -10,14 +10,27 @@ from pathlib import Path
 from time import sleep
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+import selenium.webdriver.support.expected_conditions as EC
 
 import requests
 
 from constants import (
-    COLORS, TMPL_LIVE_STREAM_URL, VERSION_CHECK_URL, PATH_DEBUG, CURRENT_VERSION, DEBUG_ENVIRON, PATH_CONFIG,
-    UPDATE_DOWNLOAD_URL, NOWAIT_ENVIRON, DEFAULT_CHROMIUM_FLAGS, PATH_STATS, SCHEDULE_URL, FAKE_USER_AGENT, NEW_TAB_URL
+    COLORS,
+    TMPL_LIVE_STREAM_URL,
+    VERSION_CHECK_URL,
+    PATH_DEBUG,
+    CURRENT_VERSION,
+    DEBUG_ENVIRON,
+    PATH_CONFIG,
+    UPDATE_DOWNLOAD_URL,
+    NOWAIT_ENVIRON,
+    DEFAULT_CHROMIUM_FLAGS,
+    PATH_STATS,
+    SCHEDULE_URL,
+    FAKE_USER_AGENT,
+    NEW_TAB_URL,
 )
-
 
 def get_version(version: str) -> tuple:
     return tuple(map(int, (version.split("."))))
@@ -155,44 +168,144 @@ def make_get_request(url: str):
     return requests.get(url, headers={'User-Agent': FAKE_USER_AGENT}, timeout=10)
 
 
+
+def url_starts_with(url: str):
+    """An expectation to check if the current url starts with a given url"""
+
+    def _predicate(driver):
+        return driver.current_url.startswith(url)
+
+    return _predicate
+
+
+def hide_chat(driver: uc.Chrome):
+    try:
+        chat_frame = driver.wait(seconds=5).until(
+            EC.visibility_of_element_located((By.TAG_NAME, "ytd-live-chat-frame"))
+        )
+
+        if chat_frame.get_dom_attribute("collapsed") is None:
+            button = driver.wait().until(
+                EC.element_to_be_clickable((By.ID, "show-hide-button"))
+            )
+            button_text = button.text
+            button.click()
+            log_info("Bot", f"Clicked on '{button_text}' to hide chat window")
+    except (TimeoutException, NoSuchElementException):
+        pass
+
+
+def check_rewards(driver: uc.Chrome):
+    try:
+        account_link = driver.wait(seconds=5).until(
+            EC.visibility_of_element_located(
+                (By.TAG_NAME, "ytd-account-link-button-renderer")
+            )
+        )
+
+        # c is the curve command in svg. The check mark indicating token rewards is shown in a circle, so we must be getting rewards if the svg has curves
+        svg_path = (
+            account_link.find_element(By.CSS_SELECTOR, "svg>path")
+            .get_attribute("d")
+            .lower()
+        )
+        has_rewards = "c" in svg_path
+        is_connected = account_link.text.strip() == "Connected"
+        log_info(
+            "Bot",
+            f"Your account is{'' if is_connected else ' not'} connected and{'' if has_rewards else ' not'} earning rewards",
+        )
+    except (TimeoutException, NoSuchElementException):
+        pass
+
+
+def wait_for_tab(driver: uc.Chrome, tab_name: str, *args):
+    args = "".join(args)
+    return driver.wait().until(
+        EC.presence_of_element_located(
+            (By.XPATH, f'//tp-yt-paper-tab[contains(.,"{tab_name}")]{args}')
+        )
+    )
+
+
+def videos_tab(driver: uc.Chrome):
+    """click on Videos tab which contains encore streams"""
+    tab = wait_for_tab(driver, "Videos")
+    log_debug("Bot", "videos tab found")
+    if tab.get_attribute("aria-selected") != "true":
+        tab.click()
+        wait_for_tab(driver, "Videos", '[@aria-selected="true"]')
+
+
+def home_tab(driver: uc.Chrome):
+    """wait until Home tab is selected"""
+    wait_for_tab(driver, "Home", '[@aria-selected="true"]')
+    log_debug("Bot", "on home tab now")
+
+
+def find_live_video_url(driver: uc.Chrome):
+    for open_tab in [home_tab, videos_tab]:
+        open_tab(driver)
+        try:
+            el = driver.wait().until(
+                EC.presence_of_element_located(
+                    (
+                        By.CSS_SELECTOR,
+                        "ytd-thumbnail[loaded]>a:has(div .ytd-thumbnail:is([overlay-style=LIVE]))",
+                    )
+                )
+            )
+            stream_url = el.get_attribute("href")
+            log_debug("LiveCheck", f"found stream: {stream_url}")
+            return stream_url
+        except (TimeoutException, NoSuchElementException):
+            pass
+
+    log_info("LiveCheck", "stream not live")
+
+
 def get_active_stream(channel_id: str, driver: uc.Chrome | None = None) -> str | None:
     """Returns stream url if a channel with specified channel_id has active stream"""
-    src = 'LiveCheck'
+    src = "LiveCheck"
 
-    check_url = 'https://www.youtube.com/channel/%s' % channel_id
-
-    driver_failed = False
-
-    if driver:
-        log_debug(src, 'Checking stream status using WebDriver...')
-        driver.get(check_url)
-        if 'consent.youtube.com' in driver.current_url:
-            log_debug(src, 'YouTube asked for consent')
-            try:
-                element = driver.find_element(By.XPATH, '//form[@action="https://consent.youtube.com/save"]')
-                element.click()
-            except:
-                log_error(src, 'Failed to get stream status using driver!')
-                driver_failed = True
-                driver.get(NEW_TAB_URL)
-
-        if not driver_failed:
-            sleep(5)
-            response = driver.execute_script("return document.getElementsByTagName('html')[0].innerHTML")
-            driver.get(NEW_TAB_URL)
-
-    if not driver or driver_failed:
-        log_debug(src, 'Checking stream status using \'requests\'...')
-        response = make_get_request('https://www.youtube.com/channel/%s' % channel_id).text
+    check_url = "https://www.youtube.com/channel/%s" % channel_id
 
     try:
-        if 'hqdefault_live.jpg' in response:
-            video_id = re.search(r'vi/(.*?)/hqdefault_live.jpg', response).group(1)
-            return TMPL_LIVE_STREAM_URL % video_id
+        if driver:
+            log_debug(src, "Checking stream status using WebDriver...")
+            driver.get(check_url)
+            if "consent.youtube.com" in driver.current_url:
+                log_debug(src, "YouTube asked for consent")
+                try:
+                    element = driver.find_element(
+                        By.XPATH, '//form[@action="https://consent.youtube.com/save"]'
+                    )
+                    element.click()
+                except:
+                    log_error(src, "Failed to get stream status using driver!")
+                    return
+
+            driver.wait().until(
+                url_starts_with("https://www.youtube.com/")
+            )
+            stream_url = find_live_video_url(driver)
+            driver.get(NEW_TAB_URL)
+            return stream_url
+
+        if not driver:
+            log_debug(src, "Checking stream status using 'requests'...")
+            response = make_get_request(check_url).text
+
+            matches = re.search(r"/([\w-]+)/hqdefault_live.jpg", response)
+            if matches is not None and len(matches.groups()) > 0:
+                video_id = matches.group(1)
+                return TMPL_LIVE_STREAM_URL % video_id
+
     except Exception as e:
-        log_error(src, f'&rLive stream check failed: {str(e)}')
-        make_debug_file('failed-getting-active-stream', traceback.format_exc())
+        log_error(src, f"&rLive stream check failed: {str(e)}")
+        make_debug_file("failed-getting-active-stream", traceback.format_exc())
         return
+
 
 
 def get_seconds_till_next_match() -> float | None:

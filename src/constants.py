@@ -25,7 +25,6 @@ OWC_CHANNEL_ID = 'UCWPW0pjx6gncOEnTW8kYzrg'
 
 SCHEDULE_URL = 'https://overwatchleague.com/en-us/schedule'
 
-TMPL_LIVE_STREAM_EMBED_URL = 'https://www.youtube.com/embed/live_stream?channel=%s'
 TMPL_LIVE_STREAM_URL = 'https://www.youtube.com/watch?v=%s'
 
 VERSION_CHECK_URL = 'https://raw.githubusercontent.com/ucarno/ow-league-tokens/main/version.txt'
@@ -35,11 +34,6 @@ YOUTUBE_LOGIN_URL = 'https://accounts.google.com/ServiceLogin?service=youtube&co
 
 YOUTUBE_AUTH_PASS = 'https://www.youtube.com'
 YOUTUBE_AUTH_FAIL = 'https://accounts.google.com'
-
-YOUTUBE_AUTH_PASS_RE = YOUTUBE_AUTH_PASS.replace('/', r'\/')
-YOUTUBE_AUTH_FAIL_RE = YOUTUBE_AUTH_FAIL.replace('/', r'\/')
-YOUTUBE_AUTH_ANY_RE = f'^({YOUTUBE_AUTH_PASS_RE}|{YOUTUBE_AUTH_FAIL_RE})'
-YOUTUBE_AUTH_PASS_RE = '^' + YOUTUBE_AUTH_PASS_RE
 
 NEW_TAB_URL = 'chrome://new-tab-page/'
 STREAM_CHECK_FREQUENCY = 300  # seconds
