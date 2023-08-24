@@ -1,5 +1,6 @@
 colorama
 requests
-undetected-chromedriver==3.4.6
+undetected-chromedriver==3.5.2
 selenium==4.9.0
 certifi==2023.5.7
+webdriver-manager==4.0.0
