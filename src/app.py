@@ -1,6 +1,7 @@
 import atexit
 import logging
 import traceback
+import os
 from random import randint
 from time import sleep, time
 
@@ -8,6 +9,7 @@ from selenium.common.exceptions import WebDriverException
 import selenium.webdriver.support.expected_conditions as EC  # noqa
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 import undetected_chromedriver as uc
 
 from constants import YOUTUBE_LOGIN_URL, YOUTUBE_AUTH_PASS, YOUTUBE_AUTH_FAIL, YOUTUBE_AUTH_ANY_RE, \
@@ -46,12 +48,14 @@ def get_chrome_options(config: dict) -> uc.ChromeOptions:
 def get_driver(profile: str, config: dict) -> uc.Chrome:
     global CURRENT_VERSION_MAIN
 
+    os.environ['WDM_LOG'] = str(logging.NOTSET)
     kwargs = {
         'options': get_chrome_options(config),
         'user_data_dir': PATH_PROFILES.joinpath(profile).absolute(),
         'headless': config['headless'],
         'log_level': 1 if is_debug() else 0,
         'version_main': CURRENT_VERSION_MAIN,
+        'driver_executable_path': ChromeDriverManager().install(),
     }
 
     try:
