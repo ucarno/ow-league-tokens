@@ -10,9 +10,7 @@ To earn Contenders skins in the same automated fashion, try [this](https://githu
 
 <div align="center">
 
-[![Support my work](https://i.imgur.com/NOoWZ8G.png)](https://ko-fi.com/ucarno)
 [![Join Discord](https://i.imgur.com/dUQDNfo.png)](https://discord.gg/kkq2XY4cJM)
-[![Hire Me on Upwork](https://i.imgur.com/3jnH5ln.png)](https://www.upwork.com/freelancers/~012888e364d51bc0b2)
 
 </div>
 
