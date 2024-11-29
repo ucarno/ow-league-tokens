@@ -41,6 +41,8 @@ YOUTUBE_AUTH_FAIL_RE = YOUTUBE_AUTH_FAIL.replace('/', r'\/')
 YOUTUBE_AUTH_ANY_RE = f'^({YOUTUBE_AUTH_PASS_RE}|{YOUTUBE_AUTH_FAIL_RE})'
 YOUTUBE_AUTH_PASS_RE = '^' + YOUTUBE_AUTH_PASS_RE
 
+BNET_TOKEN_API = 'https://account.battle.net/api/vc/ecosystem/1'
+
 NEW_TAB_URL = 'chrome://new-tab-page/'
 STREAM_CHECK_FREQUENCY = 300  # seconds
 
